@@ -12,14 +12,14 @@
 - [Project Overview](#project-overview)
 - [Tech Stack](#tech-stack)
 - [System Requirements](#system-requirements)
-- [Quick Start — One Command Setup](#quick-start--one-command-setup)
+- [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
 - [Environment Configuration](#environment-configuration)
 - [Database Setup](#database-setup)
 - [Frontend Setup](#frontend-setup)
 - [Backend Setup](#backend-setup)
 - [AI Engine Setup](#ai-engine-setup)
-- [DevOps & Deployment](#devops--deployment)
+- [How to Run Everything](#how-to-run-everything)
 - [Code Quality Standards](#code-quality-standards)
 - [Security Standards](#security-standards)
 - [Testing](#testing)
@@ -59,657 +59,402 @@
 | Technology | Version | Purpose |
 |---|---|---|
 | React.js | 18.x | UI framework |
-| Vite | 5.x | Build tool (fast HMR) |
+| Vite | 5.x | Build tool |
 | TailwindCSS | 3.x | Styling |
 | Axios | 1.x | HTTP client |
-| React Router | 6.x | Client-side routing |
-| React Query | 5.x | Server state management |
-| Zustand | 4.x | Global state management |
 
 ### Backend
 | Technology | Version | Purpose |
 |---|---|---|
-| Python | 3.11+ | Primary backend language |
-| FastAPI | 0.110+ | REST API framework |
-| Uvicorn | 0.29+ | ASGI server |
+| Python | 3.11+ | Backend language |
+| FastAPI | 0.110+ | API framework |
 | SQLAlchemy | 2.x | ORM |
-| Alembic | 1.x | Database migrations |
-| Pydantic | 2.x | Data validation |
-| JWT (python-jose) | 3.x | Authentication tokens |
-| Bcrypt | 4.x | Password hashing |
+| Alembic | 1.x | Migrations |
+| Pydantic | 2.x | Validation |
 
 ### Database
 | Technology | Version | Purpose |
 |---|---|---|
-| MySQL | 8.0+ | Primary relational database |
-| Redis | 7.x | Caching and session storage |
+| MySQL | 8.0+ | Main database |
+| Redis | 7.x | Caching |
 
 ### AI Engine
 | Technology | Purpose |
 |---|---|
-| Google Gemini API | Primary AI model for career roadmap generation |
-| OpenAI GPT-4 API | Fallback AI model |
-
-### DevOps
-| Technology | Purpose |
-|---|---|
-| Docker | Containerisation |
-| Docker Compose | Multi-container orchestration |
-| Nginx | Reverse proxy and static file serving |
-| GitHub Actions | CI/CD pipeline |
-| Let's Encrypt (Certbot) | Free SSL/TLS certificates |
+| Google Gemini API | Roadmap generation |
+| OpenAI GPT-4 API | Fallback model |
 
 ---
 
 ## System Requirements
 
-### Minimum (Development)
-- OS: Ubuntu 20.04+ / macOS 12+ / Windows 11 with WSL2
-- RAM: 4 GB
+### Windows 11
+
+#### Minimum
+- RAM: 4 GB (6+ GB recommended)
 - Storage: 10 GB free
-- CPU: 2 cores
+- **No Docker, WSL2, or virtual environments**
 
-### Recommended (Production)
-- OS: Ubuntu 22.04 LTS
-- RAM: 8 GB
-- Storage: 50 GB SSD
-- CPU: 4 cores
+#### Install These 4 Apps
 
-### Software Prerequisites
+1. **Python 3.11+**
+   - Download: https://www.python.org/downloads/
+   - ✅ Check "Add Python to PATH"
+   - Restart computer
 
-Before running any command, ensure the following are installed:
+2. **Node.js 20+ (LTS)**
+   - Download: https://nodejs.org/
+   - Restart computer
 
-```bash
-# Check versions
-docker --version          # Docker 24.x+
-docker compose version    # Docker Compose v2.x+
-git --version             # Git 2.x+
-node --version            # Node.js 20.x+ (for local dev only)
-python3 --version         # Python 3.11+ (for local dev only)
+3. **MySQL 8.0+**
+   - Download: https://dev.mysql.com/downloads/mysql/
+   - Password: `root`
+   - ✅ Check "Install as Windows Service"
+   - Restart computer
+
+4. **Redis 7+**
+   - Download: https://github.com/microsoftarchive/redis/releases
+   - Extract to: `C:\Redis\`
+
+#### Verify Installation
+
+```powershell
+python --version
+node --version
+npm --version
+mysql --version
+redis-cli --version
 ```
 
-#### Install Docker (Ubuntu)
-```bash
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker $USER
-newgrp docker
-```
-
-#### Install Node.js 20.x (Ubuntu)
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
-```
-
-#### Install Python 3.11 (Ubuntu)
-```bash
-sudo apt update
-sudo apt install -y python3.11 python3.11-venv python3-pip
-```
+All should show version numbers.
 
 ---
 
-## Quick Start — One Command Setup
+## Quick Start
 
-> **This is all you need.** Clone and run — the entire platform starts automatically.
+### Step 1: Install 4 Apps (45 minutes)
 
-### Step 1 — Clone the repository
-```bash
-git clone https://github.com/your-username/destinai.git
-cd destinai
+Follow the installation steps above. **Remember to restart after each app.**
+
+### Step 2: Run Setup (5 minutes)
+
+Open PowerShell in your project folder:
+
+```powershell
+.\setup-no-docker.ps1
 ```
 
-### Step 2 — Configure environment
-```bash
-cp .env.example .env
-# Open .env and add your API keys (see Environment Configuration section)
-nano .env
-```
+Wait for completion message.
 
-### Step 3 — Launch everything
-```bash
-chmod +x setup.sh
-./setup.sh
-```
+### Step 3: Start Services (3 PowerShell Windows)
 
-That's it. The `setup.sh` script automatically handles:
-- Pulling all Docker images
-- Building frontend and backend containers
-- Running database migrations
-- Seeding initial college and career data
-- Starting all services (frontend, backend, database, Redis, Nginx)
-- Running health checks on all services
-- Printing the live URLs when ready
+**Terminal 1 — Redis:**
+```powershell
+C:\Redis\redis-server.exe
+```
+Should show: `Ready to accept connections`
 
-### Expected Output After Setup
+**Terminal 2 — Backend:**
+```powershell
+cd backend
+uvicorn app.main:app --reload
 ```
-=========================================
-  DestinAI is running successfully!
-=========================================
-  Frontend:   http://localhost:3000
-  Backend API: http://localhost:8000
-  API Docs:   http://localhost:8000/docs
-  Admin Panel: http://localhost:3000/admin
-=========================================
+Should show: `Uvicorn running on http://0.0.0.0:8000`
+
+**Terminal 3 — Frontend:**
+```powershell
+cd frontend
+npm run dev
 ```
+Should show: `Local: http://localhost:5173`
+
+### Step 4: Open Browser
+
+Go to: **http://localhost:5173**
 
 ---
 
 ## Project Structure
 
 ```
-destinai/
-├── frontend/                    # React.js application
-│   ├── public/
+project/
+├── frontend/               # React app
 │   ├── src/
-│   │   ├── assets/              # Images, icons, fonts
-│   │   ├── components/          # Reusable UI components
-│   │   │   ├── common/          # Buttons, inputs, modals
-│   │   │   ├── career/          # Career roadmap components
-│   │   │   ├── college/         # College match components
-│   │   │   └── dashboard/       # Dashboard widgets
-│   │   ├── pages/               # Route-level page components
-│   │   │   ├── Home.jsx
-│   │   │   ├── Onboarding.jsx   # 6-question AI flow
-│   │   │   ├── Roadmap.jsx      # Living career roadmap
-│   │   │   ├── CollegeMatch.jsx
-│   │   │   ├── Simulation.jsx   # Career simulation
-│   │   │   ├── Dashboard.jsx
-│   │   │   └── ParentDashboard.jsx
-│   │   ├── hooks/               # Custom React hooks
-│   │   ├── store/               # Zustand global state
-│   │   ├── services/            # API call functions (Axios)
-│   │   ├── utils/               # Helper functions
-│   │   ├── constants/           # App-wide constants
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── .env.local
-│   ├── vite.config.js
-│   ├── tailwind.config.js
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   └── App.jsx
 │   └── package.json
 │
-├── backend/                     # FastAPI application
+├── backend/                # FastAPI app
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── v1/
-│   │   │   │   ├── routes/
-│   │   │   │   │   ├── auth.py
-│   │   │   │   │   ├── students.py
-│   │   │   │   │   ├── careers.py
-│   │   │   │   │   ├── colleges.py
-│   │   │   │   │   ├── roadmap.py
-│   │   │   │   │   ├── simulation.py
-│   │   │   │   │   └── parents.py
-│   │   │   │   └── __init__.py
-│   │   │   └── deps.py          # Dependency injection
-│   │   ├── core/
-│   │   │   ├── config.py        # Settings from .env
-│   │   │   ├── security.py      # JWT, hashing
-│   │   │   └── database.py      # DB connection
-│   │   ├── models/              # SQLAlchemy ORM models
-│   │   │   ├── user.py
-│   │   │   ├── student.py
-│   │   │   ├── career.py
-│   │   │   ├── college.py
-│   │   │   └── roadmap.py
-│   │   ├── schemas/             # Pydantic request/response schemas
-│   │   ├── services/            # Business logic layer
-│   │   │   ├── ai_service.py    # Gemini / GPT integration
-│   │   │   ├── roadmap_service.py
-│   │   │   ├── college_service.py
-│   │   │   └── email_service.py
-│   │   ├── utils/               # Utility functions
-│   │   └── main.py              # FastAPI app entry point
-│   ├── migrations/              # Alembic database migrations
-│   ├── tests/                   # All backend tests
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   ├── services/
+│   │   └── main.py
 │   ├── requirements.txt
-│   └── Dockerfile
+│   └── migrations/
 │
-├── database/
-│   ├── init.sql                 # Initial schema creation
-│   ├── seed_careers.sql         # Career data seed
-│   └── seed_colleges.sql        # College data seed (15,000+ colleges)
+├── database/               # SQL files
+│   ├── init.sql
+│   ├── seed_careers.sql
+│   └── seed_colleges.sql
 │
-├── nginx/
-│   ├── nginx.conf               # Reverse proxy config
-│   └── ssl/                     # SSL certificates (auto-generated)
-│
-├── .github/
-│   └── workflows/
-│       ├── ci.yml               # CI pipeline (test on every push)
-│       └── deploy.yml           # CD pipeline (deploy on merge to main)
-│
-├── docker-compose.yml           # Development environment
-├── docker-compose.prod.yml      # Production environment
-├── .env.example                 # Environment variable template
-├── setup.sh                     # One-command setup script
-├── Makefile                     # Developer shortcut commands
-└── README.md
+├── readme.md               # This file
+└── setup-no-docker.ps1     # Setup script
 ```
 
 ---
 
 ## Environment Configuration
 
-Copy `.env.example` to `.env` and fill in your values:
+Copy `.env.example` to `.env`:
 
-```bash
-cp .env.example .env
+```powershell
+copy .env.example .env
 ```
 
-### `.env.example`
+Edit `.env` with your values:
 
 ```env
-# =============================================
-# APPLICATION
-# =============================================
+# Application
 APP_NAME=DestinAI
-APP_ENV=development              # development | production
-APP_DEBUG=true
+APP_ENV=development
 APP_PORT=8000
-FRONTEND_PORT=3000
-SECRET_KEY=your-super-secret-key-change-this-in-production-min-32-chars
+FRONTEND_PORT=5173
 
-# =============================================
-# DATABASE — MySQL
-# =============================================
-DB_HOST=mysql
+# Database (local)
+DB_HOST=localhost
 DB_PORT=3306
 DB_NAME=destinai_db
-DB_USER=destinai_user
-DB_PASSWORD=your-strong-db-password-here
-DB_ROOT_PASSWORD=your-root-password-here
+DB_USER=root
+DB_PASSWORD=root123
+DB_ROOT_PASSWORD=root123
 
-# =============================================
-# CACHE — Redis
-# =============================================
-REDIS_HOST=redis
+# Cache (local)
+REDIS_HOST=localhost
 REDIS_PORT=6379
-REDIS_PASSWORD=your-redis-password-here
 
-# =============================================
-# AI ENGINE
-# =============================================
-GEMINI_API_KEY=your-google-gemini-api-key-here
-OPENAI_API_KEY=your-openai-api-key-here
-AI_PRIMARY_MODEL=gemini                # gemini | openai
-AI_FALLBACK_MODEL=openai
+# AI APIs
+GEMINI_API_KEY=your-key-here
+OPENAI_API_KEY=your-key-here
+AI_PRIMARY_MODEL=gemini
 
-# =============================================
-# JWT AUTHENTICATION
-# =============================================
-JWT_SECRET_KEY=your-jwt-secret-key-min-32-chars
+# JWT
+JWT_SECRET_KEY=your-secret-key-min-32-chars
 JWT_ALGORITHM=HS256
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
-JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 
-# =============================================
-# EMAIL (for notifications & OTP)
-# =============================================
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
-EMAIL_FROM=noreply@destinai.com
-
-# =============================================
-# CORS
-# =============================================
-CORS_ORIGINS=http://localhost:3000,https://yourdomain.com
-
-# =============================================
-# FRONTEND
-# =============================================
+# Frontend
 VITE_API_BASE_URL=http://localhost:8000/api/v1
 VITE_APP_NAME=DestinAI
 ```
+
+### Get API Keys
+
+**Google Gemini:**
+1. Go to https://aistudio.google.com
+2. Click "Get API Key"
+3. Copy to `.env`
+
+**OpenAI:**
+1. Go to https://platform.openai.com
+2. Create API key
+3. Copy to `.env`
 
 ---
 
 ## Database Setup
 
-### Schema Overview
+MySQL is automatically setup by the script.
 
-The database is automatically created when you run `./setup.sh`. Manual setup:
+### Manual Commands
 
-```bash
-# Run migrations only
-docker compose exec backend alembic upgrade head
+```powershell
+# Create database
+mysql -u root -proot123 -e "CREATE DATABASE destinai_db;"
 
-# Seed initial data (careers, colleges, streams)
-docker compose exec backend python -m app.utils.seed
-```
+# Run migrations
+cd backend
+alembic upgrade head
 
-### Core Tables
-
-```sql
--- Users and authentication
-users              -- All user accounts (students, parents, counsellors)
-student_profiles   -- Extended student information
-parent_profiles    -- Parent accounts linked to students
-
--- Career intelligence
-careers            -- 2,000+ career options with metadata
-career_scores      -- Automation risk + salary + growth data
-streams            -- Science / Commerce / Arts / Vocational
-
--- College matching
-colleges           -- 15,000+ global colleges
-college_courses    -- Courses offered per college
-college_scores     -- Rankings, culture, alumni strength scores
-
--- Roadmaps
-roadmaps           -- Generated AI roadmaps per student
-milestones         -- Weekly milestone tasks per roadmap
-roadmap_history    -- Version history (living roadmap updates)
-
--- Analytics
-student_outcomes   -- Tracks whether students succeeded (moat data)
-session_logs       -- User activity for AI improvement
+# Seed data
+python -m app.utils.seed
 ```
 
 ---
 
 ## Frontend Setup
 
-### Local Development (without Docker)
+### Install & Run
 
-```bash
+```powershell
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
 ```
 
-### Key Scripts
+### Key Commands
 
-```bash
-npm run dev          # Start dev server at localhost:3000
-npm run build        # Build optimised production bundle
-npm run lint         # Run ESLint
-npm run lint:fix     # Auto-fix linting issues
-npm run format       # Run Prettier formatter
-npm run test         # Run unit tests (Vitest)
-npm run test:ui      # Run tests with UI
-npm run test:e2e     # Run end-to-end tests (Playwright)
+```powershell
+npm run build      # Build for production
+npm run lint       # Run ESLint
+npm run test       # Run tests
 ```
 
 ---
 
 ## Backend Setup
 
-### Local Development (without Docker)
+### Install & Run
 
-```bash
+```powershell
 cd backend
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate        # Linux/macOS
-# venv\Scripts\activate         # Windows
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Run database migrations
 alembic upgrade head
-
-# Seed initial data
 python -m app.utils.seed
-
-# Start development server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload
 ```
 
 ### Key Commands
 
-```bash
-# Run all tests
-pytest
-
-# Run with coverage report
-pytest --cov=app --cov-report=html
-
-# Generate new migration
-alembic revision --autogenerate -m "your migration description"
-
-# Apply migrations
-alembic upgrade head
-
-# Rollback last migration
-alembic downgrade -1
-
-# Format code
-black app/
-isort app/
-
-# Lint code
-flake8 app/
-mypy app/
+```powershell
+pytest                          # Run tests
+pytest --cov=app               # Coverage report
+black app/                      # Format code
+flake8 app/                     # Lint code
+alembic revision --autogenerate -m "description"  # Create migration
 ```
 
 ---
 
 ## AI Engine Setup
 
-### How the AI Engine Works
+The AI engine works as follows:
 
 ```
 Student answers 6 questions
         ↓
-Input validation & sanitisation (Pydantic)
+Input validation
         ↓
-Student profile constructed
+Profile constructed
         ↓
-Prompt engineered with career + college + market data context
+Prompt engineered
         ↓
-Gemini API called (fallback: OpenAI GPT-4)
+Gemini API called (or OpenAI fallback)
         ↓
-Response parsed and structured (JSON)
+Response parsed
         ↓
 Roadmap stored in database
         ↓
-Milestones generated (weekly tasks)
+Milestones generated
         ↓
 College matches ranked
         ↓
 Future-proof score calculated
         ↓
-Full roadmap returned to frontend
+Full roadmap returned
 ```
-
-### Getting API Keys
-
-**Google Gemini API:**
-1. Go to [https://aistudio.google.com](https://aistudio.google.com)
-2. Click "Get API Key"
-3. Create a new key
-4. Copy into `.env` as `GEMINI_API_KEY`
-
-**OpenAI API (fallback):**
-1. Go to [https://platform.openai.com](https://platform.openai.com)
-2. Go to API Keys section
-3. Create new secret key
-4. Copy into `.env` as `OPENAI_API_KEY`
 
 ---
 
-## DevOps & Deployment
+## How to Run Everything
 
-### Docker Compose — Development
+### 3 PowerShell Windows
 
-```bash
-# Start all services
-docker compose up -d
+**Window 1 — Redis Server:**
+```powershell
+C:\Redis\redis-server.exe
+```
+Expected: `Ready to accept connections`
 
-# View all running containers
-docker compose ps
+**Window 2 — Backend API:**
+```powershell
+cd backend
+uvicorn app.main:app --reload
+```
+Expected: `Uvicorn running on http://0.0.0.0:8000`
 
-# View logs (all services)
-docker compose logs -f
+**Window 3 — Frontend:**
+```powershell
+cd frontend
+npm run dev
+```
+Expected: `Local: http://localhost:5173`
 
-# View logs (specific service)
-docker compose logs -f backend
-docker compose logs -f frontend
-docker compose logs -f mysql
+### Services
 
-# Stop all services
-docker compose down
+| Service | Port | Status |
+|---------|------|--------|
+| Redis | 6379 | ✓ Running |
+| MySQL | 3306 | ✓ Running (Service) |
+| Backend | 8000 | ✓ Running |
+| Frontend | 5173 | ✓ Running |
 
-# Stop and remove all data (full reset)
-docker compose down -v
+### Open Browser
+
+```
+http://localhost:5173
 ```
 
-### Docker Compose — Production
+### Stop Everything
 
-```bash
-# Deploy to production
-docker compose -f docker-compose.prod.yml up -d --build
-
-# Rolling update (zero downtime)
-docker compose -f docker-compose.prod.yml up -d --build --no-deps backend
-docker compose -f docker-compose.prod.yml up -d --build --no-deps frontend
-```
-
-### Makefile Shortcuts
-
-```bash
-make setup          # Full first-time setup
-make up             # Start all services
-make down           # Stop all services
-make restart        # Restart all services
-make logs           # Tail all logs
-make migrate        # Run database migrations
-make seed           # Seed database with initial data
-make test           # Run all tests (frontend + backend)
-make lint           # Run all linters
-make build          # Build production images
-make deploy         # Deploy to production server
-make backup-db      # Backup MySQL database
-make restore-db     # Restore MySQL from backup
-make shell-backend  # Open shell in backend container
-make shell-db       # Open MySQL shell
-make clean          # Remove all containers, images, volumes
-```
-
-### Production Deployment on a VPS (Ubuntu 22.04)
-
-```bash
-# 1. SSH into your server
-ssh user@your-server-ip
-
-# 2. Clone the repository
-git clone https://github.com/your-username/destinai.git
-cd destinai
-
-# 3. Configure environment for production
-cp .env.example .env
-nano .env
-# Set APP_ENV=production, APP_DEBUG=false, strong passwords
-
-# 4. Run production setup (one command)
-chmod +x setup.sh
-./setup.sh --production
-
-# 5. Setup SSL (free HTTPS)
-docker compose -f docker-compose.prod.yml exec nginx certbot \
-  --nginx -d yourdomain.com -d www.yourdomain.com
-
-# Done — your site is live at https://yourdomain.com
-```
-
-### CI/CD Pipeline (GitHub Actions)
-
-Every push to `main` branch automatically:
-1. Runs all tests (frontend + backend)
-2. Runs linting and code quality checks
-3. Runs security vulnerability scan
-4. Builds Docker images
-5. Deploys to production server if all checks pass
-6. Sends deployment notification
+Close all 3 PowerShell windows.
 
 ---
 
 ## Code Quality Standards
 
-### Frontend Standards
-- All components written as functional components with hooks
-- No inline styles — Tailwind classes only
-- Every component has a corresponding test file
-- PropTypes or TypeScript types defined for all props
-- No `console.log` in production code
-- ESLint + Prettier enforced on every commit (Husky pre-commit hook)
-- Maximum file length: 300 lines — split if longer
+### Frontend
+- Functional components with hooks
+- Tailwind CSS only (no inline styles)
+- Tests for every component
+- ESLint + Prettier
 
-### Backend Standards
-- All endpoints have input validation via Pydantic schemas
-- All database queries go through SQLAlchemy ORM — no raw SQL
-- All sensitive operations are logged
-- Every function has a docstring
-- Type hints on all function arguments and return values
-- Black formatter + isort enforced on every commit
-- Maximum function length: 50 lines — split if longer
-- No hardcoded secrets — all from environment variables
+### Backend
+- Pydantic validation on all endpoints
+- SQLAlchemy ORM (no raw SQL)
+- Type hints everywhere
+- Docstrings on all functions
+- Black formatter + isort
 
-### Git Commit Standards
+### Git Commits
 
 ```
-feat: add college DNA matching algorithm
-fix: resolve JWT token expiry issue
-docs: update API documentation
-style: format backend code with black
-refactor: simplify AI prompt construction
-test: add unit tests for roadmap service
-chore: update dependencies
-```
-
-### Branch Strategy
-```
-main          → production (protected — PR required)
-develop       → staging (integration branch)
-feat/xyz      → new features
-fix/xyz       → bug fixes
-hotfix/xyz    → critical production fixes
+feat: new feature
+fix: bug fix
+docs: documentation
+refactor: code refactor
+test: add tests
 ```
 
 ---
 
 ## Security Standards
 
-### Authentication & Authorisation
-- JWT tokens with short expiry (30 minutes access, 7 days refresh)
-- Bcrypt password hashing with salt rounds = 12
-- Role-based access control (student / parent / counsellor / admin)
-- Rate limiting on all authentication endpoints (5 requests/minute)
-- Account lockout after 5 failed login attempts
+### Authentication
+- JWT tokens (30 min access, 7 days refresh)
+- Bcrypt password hashing (rounds = 12)
+- Role-based access control
+- Rate limiting (5 req/min)
+- Account lockout after 5 failed attempts
 
 ### Data Protection
-- All passwords hashed — never stored in plain text
-- All API keys stored in environment variables — never in code
-- Student data encrypted at rest (MySQL encryption)
-- HTTPS enforced in production — HTTP redirects to HTTPS
-- CORS configured to allow only trusted origins
-- SQL injection prevented via SQLAlchemy ORM
-- XSS prevented via React's built-in escaping
-- CSRF protection enabled on all POST endpoints
+- All passwords hashed
+- API keys in .env only
+- HTTPS in production
+- CORS configured
+- SQL injection prevention (ORM)
+- XSS prevention (React)
 
 ### Dependency Security
-```bash
-# Frontend — check for vulnerabilities
+
+```powershell
+# Frontend
 npm audit
 npm audit fix
 
-# Backend — check for vulnerabilities
+# Backend
 pip install safety
 safety check -r requirements.txt
 ```
@@ -718,93 +463,49 @@ safety check -r requirements.txt
 
 ## Testing
 
-### Run All Tests
+### Frontend
 
-```bash
-# One command — runs everything
-make test
-```
-
-### Frontend Tests
-
-```bash
+```powershell
 cd frontend
-
-# Unit and component tests
 npm run test
-
-# End-to-end tests
-npm run test:e2e
-
-# Coverage report
 npm run test:coverage
 ```
 
-### Backend Tests
+### Backend
 
-```bash
+```powershell
 cd backend
-source venv/bin/activate
-
-# All tests
 pytest
-
-# With coverage
 pytest --cov=app --cov-report=html
-open htmlcov/index.html
-
-# Specific test file
-pytest tests/test_ai_service.py
-
-# Specific test function
-pytest tests/test_roadmap.py::test_generate_roadmap_success
 ```
 
-### Test Coverage Targets
+### Coverage Targets
 
-| Module | Target Coverage |
-|---|---|
-| AI service (roadmap generation) | 90%+ |
-| Authentication endpoints | 95%+ |
-| College matching algorithm | 85%+ |
-| Database models | 80%+ |
+| Module | Target |
+|--------|--------|
+| AI service | 90%+ |
+| Auth endpoints | 95%+ |
+| College matching | 85%+ |
 | Frontend components | 75%+ |
 
 ---
 
 ## API Documentation
 
-Once the backend is running, interactive API documentation is auto-generated at:
+Once backend is running:
 
-- **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- **Swagger UI:** http://localhost:8000/docs
+- **ReDoc:** http://localhost:8000/redoc
 
 ### Core Endpoints
 
 ```
-POST   /api/v1/auth/register          Register new student account
-POST   /api/v1/auth/login             Login and receive JWT tokens
-POST   /api/v1/auth/refresh           Refresh access token
-POST   /api/v1/auth/logout            Logout and invalidate token
-
-POST   /api/v1/roadmap/generate       Generate AI roadmap from 6 inputs
-GET    /api/v1/roadmap/{id}           Get student roadmap
-PUT    /api/v1/roadmap/{id}/update    Trigger roadmap auto-update
-GET    /api/v1/roadmap/{id}/milestones Get weekly milestones
-
-GET    /api/v1/careers                List all career options
-GET    /api/v1/careers/{id}           Get career details + future-proof score
-GET    /api/v1/careers/simulate/{id}  Start AI career simulation
-
-GET    /api/v1/colleges               List colleges (with filters)
-GET    /api/v1/colleges/match         Get AI-matched colleges for student
-GET    /api/v1/colleges/{id}          Get college details
-
-GET    /api/v1/students/profile       Get student profile
-PUT    /api/v1/students/profile       Update student profile
-
-GET    /api/v1/parents/dashboard      Parent dashboard data
-POST   /api/v1/parents/link           Link parent to student account
+POST   /api/v1/auth/register          Register
+POST   /api/v1/auth/login             Login
+POST   /api/v1/roadmap/generate       Generate roadmap
+GET    /api/v1/roadmap/{id}           Get roadmap
+GET    /api/v1/colleges/match         Match colleges
+GET    /api/v1/students/profile       Get profile
 ```
 
 ---
@@ -813,103 +514,111 @@ POST   /api/v1/parents/link           Link parent to student account
 
 ### Port Already in Use
 
-```bash
-# Find and kill process on port 3000
-sudo lsof -ti:3000 | xargs kill -9
+```powershell
+# Kill port 8000
+Get-NetTCPConnection -LocalPort 8000 | Stop-Process
 
-# Find and kill process on port 8000
-sudo lsof -ti:8000 | xargs kill -9
-
-# Restart
-docker compose up -d
+# Kill port 5173
+Get-NetTCPConnection -LocalPort 5173 | Stop-Process
 ```
 
-### Database Connection Refused
+### MySQL Won't Start
 
-```bash
-# Check if MySQL container is running
-docker compose ps mysql
-
-# View MySQL logs
-docker compose logs mysql
-
-# Wait for MySQL to be ready (it takes ~30 seconds on first start)
-docker compose up -d mysql
-sleep 30
-docker compose up -d backend
+```powershell
+net start MySQL80
 ```
 
-### AI API Not Responding
+### Redis Won't Start
 
-```bash
-# Verify API keys are set correctly
-docker compose exec backend python -c "from app.core.config import settings; print(settings.GEMINI_API_KEY[:10])"
-
-# Test Gemini connection directly
-docker compose exec backend python -m app.utils.test_ai_connection
+Verify exists:
+```powershell
+C:\Redis\redis-server.exe
 ```
 
-### Frontend Not Loading
+### Database Connection Error
 
-```bash
-# Check frontend container logs
-docker compose logs frontend
-
-# Rebuild frontend container
-docker compose up -d --build frontend
+```powershell
+# Test connection
+mysql -u root -proot123 -e "SELECT 1;"
 ```
 
-### Database Migration Errors
+### Python Not Found
 
-```bash
-# Check current migration state
-docker compose exec backend alembic current
+- Restart computer after installation
+- Check "Add Python to PATH" was checked
+- Verify: `python --version`
 
-# Reset to base and re-run all migrations
-docker compose exec backend alembic downgrade base
-docker compose exec backend alembic upgrade head
+### npm Packages Won't Install
+
+```powershell
+cd frontend
+rm -r node_modules
+npm install
 ```
 
-### Complete Reset (Nuclear Option)
+### Backend Dependencies Error
 
-```bash
-# Stop everything and remove all data
-docker compose down -v
+```powershell
+cd backend
+pip install --upgrade -r requirements.txt
+```
 
-# Remove all built images
-docker rmi $(docker images -q destinai*)
+### AI API Not Working
 
-# Start fresh
-./setup.sh
+Verify `.env` has correct API keys:
+```powershell
+type .env | findstr GEMINI
+type .env | findstr OPENAI
+```
+
+Test connection:
+```powershell
+cd backend
+python -m app.utils.test_ai_connection
+```
+
+### Database Migration Error
+
+Reset migrations:
+```powershell
+cd backend
+alembic downgrade base
+alembic upgrade head
+python -m app.utils.seed
+```
+
+### Complete Reset
+
+```powershell
+# Close all terminals
+
+# Delete database
+mysql -u root -proot123 -e "DROP DATABASE destinai_db;"
+
+# Restart setup
+.\setup-no-docker.ps1
 ```
 
 ---
 
 ## Contributing Guidelines
 
-1. Fork the repository
-2. Create your feature branch: `git checkout -b feat/your-feature-name`
-3. Write your code following the code quality standards above
-4. Write tests for your changes
-5. Run the full test suite: `make test`
-6. Run linting: `make lint`
-7. Commit your changes using the commit message standard
-8. Push to your branch: `git push origin feat/your-feature-name`
-9. Open a Pull Request to the `develop` branch
-10. Wait for CI checks to pass and code review approval
+1. Create feature branch: `git checkout -b feat/your-feature`
+2. Write code & tests
+3. Run: `pytest` and `npm test`
+4. Format: `black app/` and `npm run format`
+5. Commit: `git commit -m "feat: your message"`
+6. Push: `git push origin feat/your-feature`
+7. Create Pull Request to `develop`
 
 ---
 
 ## License
 
-This project is submitted as a BCA Final Year Project at APS College of Arts and Science.
-
-```
-Project: DestinAI — AI-Powered Career Guidance System
-Domain:  Web Development
-Year:    2025–26
-```
+DestinAI — BCA Final Year Project
+APS College of Arts and Science
+2025–26
 
 ---
 
-*Built with purpose. Guided by AI. Forged for every student on earth.*
+**Built with purpose. Guided by AI. For every student on earth.**
