@@ -59,7 +59,7 @@ class CollegeService:
         # Apply pagination
         offset = (filters.page - 1) * filters.per_page
         colleges = (
-            query.order_by(College.nirf_rank.asc().nullslast())
+            query.order_by(College.nirf_rank.asc())
             .offset(offset)
             .limit(filters.per_page)
             .all()

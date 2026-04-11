@@ -1,13 +1,17 @@
 """
 DestinAI — Database Seeder
-Seeds initial career, college, and stream data.
+Seeds initial career, college, stream, and user data.
 """
 
 import logging
+from datetime import datetime
 
 from app.core.database import SessionLocal
+from app.core.security import hash_password
 from app.models.career import Career, CareerScore, Stream
 from app.models.college import College, CollegeCourse, CollegeScore
+from app.models.user import User
+from app.models.student import StudentProfile
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +117,95 @@ def seed_colleges(db):
     logger.info("✅ Colleges seeded")
 
 
+def seed_users(db):
+    """Seed dummy user accounts for testing."""
+    users = [
+        {
+            "email": "student@example.com",
+            "password": "password123",
+            "full_name": "John Doe",
+            "phone": "9876543210",
+            "role": "student",
+            "is_active": True,
+            "is_verified": True,
+            "language": "en",
+        },
+        {
+            "email": "parent@example.com",
+            "password": "password123",
+            "full_name": "Jane Doe",
+            "phone": "9876543211",
+            "role": "parent",
+            "is_active": True,
+            "is_verified": True,
+            "language": "en",
+        },
+        {
+            "email": "counsellor@example.com",
+            "password": "password123",
+            "full_name": "Dr. Smith",
+            "phone": "9876543212",
+            "role": "counsellor",
+            "is_active": True,
+            "is_verified": True,
+            "language": "en",
+        },
+        {
+            "email": "admin@example.com",
+            "password": "password123",
+            "full_name": "Admin User",
+            "phone": "9876543213",
+            "role": "admin",
+            "is_active": True,
+            "is_verified": True,
+            "language": "en",
+        },
+        {
+            "email": "student2@example.com",
+            "password": "password123",
+            "full_name": "Alice Johnson",
+            "phone": "9876543214",
+            "role": "student",
+            "is_active": True,
+            "is_verified": True,
+            "language": "en",
+        },
+        {
+            "email": "student3@example.com",
+            "password": "password123",
+            "full_name": "Bob Wilson",
+            "phone": "9876543215",
+            "role": "student",
+            "is_active": True,
+            "is_verified": True,
+            "language": "en",
+        },
+    ]
+
+    for u_data in users:
+        existing = db.query(User).filter(User.email == u_data["email"]).first()
+        if not existing:
+            # Hash the password
+            u_data["password_hash"] = hash_password(u_data.pop("password"))
+            user = User(**u_data)
+            db.add(user)
+            db.flush()
+            
+            # If student, create profile
+            if user.role == "student":
+                profile = StudentProfile(
+                    user_id=user.id,
+                    education_level="12th Grade",
+                    preferred_stream="Science",
+                    budget_range="500000-1000000",
+                    location_preference="India",
+                )
+                db.add(profile)
+
+    db.commit()
+    logger.info("✅ Users & student profiles seeded")
+
+
 def run_seed():
     """Run all seeders."""
     db = SessionLocal()
@@ -121,6 +214,7 @@ def run_seed():
         seed_streams(db)
         seed_careers(db)
         seed_colleges(db)
+        seed_users(db)
         logger.info("🌱 Database seeding complete!")
     except Exception as e:
         logger.error(f"❌ Seeding failed: {e}")

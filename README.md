@@ -20,10 +20,12 @@
 - [Backend Setup](#backend-setup)
 - [AI Engine Setup](#ai-engine-setup)
 - [How to Run Everything](#how-to-run-everything)
+- [Demo Credentials](#demo-credentials)
 - [Code Quality Standards](#code-quality-standards)
 - [Security Standards](#security-standards)
 - [Testing](#testing)
 - [API Documentation](#api-documentation)
+- [Recent Changes](#recent-changes)
 - [Troubleshooting](#troubleshooting)
 - [Contributing Guidelines](#contributing-guidelines)
 - [License](#license)
@@ -403,6 +405,20 @@ Close all 3 PowerShell windows.
 
 ---
 
+## Demo Credentials
+
+### Test Accounts (Use these to log in)
+
+| Role | Email | Password |
+|---|---|---|
+| Student | `student@example.com` | `password123` |
+| Parent | `parent@example.com` | `password123` |
+| Phone Login | `9876543210` | `password123` |
+
+**Note:** These are non-persistent demo accounts. Any data entered will be stored in the database but not returned after logout.
+
+---
+
 ## Code Quality Standards
 
 ### Frontend
@@ -510,7 +526,73 @@ GET    /api/v1/students/profile       Get profile
 
 ---
 
-## Troubleshooting
+## Recent Changes
+
+### Session: Database & UI Integration (April 11, 2026)
+
+#### 🎯 What Was Done
+
+**1. Database Setup & Testing**
+- ✅ Initialized MySQL database with 15 tables
+- ✅ Seeded 10 colleges, 15 careers, 30 college courses, 4 streams
+- ✅ Created database testing commands and validation scripts
+- ✅ Verified all tables created successfully
+
+**2. Frontend-Backend Integration**
+- ✅ Updated CollegeMatch page to fetch real college data from backend API
+- ✅ Added loading & error states for better UX
+- ✅ Integrated colleges list with search and filter functionality
+- ✅ Created `.env` file with correct backend URL: `http://localhost:8000/api/v1`
+
+**3. Security Improvements**
+- ✅ Removed password exposure from auth service console logs
+- ✅ Removed sensitive credentials from error responses
+- ✅ Hidden demo passwords from UI (now shows email only)
+- ✅ Updated login page to reference README for credentials instead of showing them
+
+**4. Documentation**
+- ✅ Added `Demo Credentials` section to README
+- ✅ Added `Recent Changes` section to track development progress
+- ✅ Documented all endpoints and their purposes
+
+#### 📋 Files Modified
+
+| File | Change |
+|---|---|
+| `frontend/src/pages/CollegeMatch.jsx` | Connected to backend API, added loading/error states |
+| `frontend/src/services/authService.js` | Removed password from console logs |
+| `frontend/src/hooks/useAuth.js` | Removed sensitive data logging |
+| `frontend/src/pages/Login.jsx` | Hid passwords from UI, added documentation notice |
+| `.env` | Created with correct API base URL (http://localhost:8000/api/v1) |
+| `readme.md` | Added Demo Credentials & Recent Changes sections |
+
+#### 🚀 Database Content
+
+**Colleges**: 10 top institutions (IIT Bombay, IIT Delhi, IISc, BITS Pilani, VIT, NIT, etc.)
+**Careers**: 15 professions (Software Engineer, Data Scientist, Doctor, CA, UX Designer, etc.)
+**Career Scores**: Automation risk, AI replacement risk, future-proof scores
+**College Courses**: B.Tech, BCA, B.Com across different colleges
+**Streams**: Science, Commerce, Arts, Vocational
+
+#### 🔧 Setup Requirements (Mac/Linux)
+
+The current setup uses `.env` file which is automatically loaded by Vite/FastAPI. No changes needed to `setup-no-docker.ps1` for Mac since it's Windows-specific.
+
+**For Mac setup:**
+```bash
+# Backend
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python init_db.py
+python -m uvicorn app.main:app --reload
+
+# Frontend (in new terminal)
+cd frontend
+npm install
+npm run dev
+```
 
 ### Port Already in Use
 

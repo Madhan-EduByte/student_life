@@ -3,6 +3,8 @@ import { AnimatePresence } from 'framer-motion';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import Home from './pages/Home';
+import Login from './pages/Login';
+import SignUp from './pages/SignUp';
 import Onboarding from './pages/Onboarding';
 import Roadmap from './pages/Roadmap';
 import CollegeMatch from './pages/CollegeMatch';
@@ -18,6 +20,8 @@ function App() {
         <AnimatePresence mode="wait">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/roadmap" element={<Roadmap />} />
             <Route path="/colleges" element={<CollegeMatch />} />

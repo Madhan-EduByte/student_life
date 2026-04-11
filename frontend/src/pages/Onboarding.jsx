@@ -60,8 +60,10 @@ const questions = [
 function Onboarding() {
   const [step, setStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showSkipModal, setShowSkipModal] = useState(false);
   const navigate = useNavigate();
   const { careerInputs, setCareerInputs } = useRoadmapStore();
+  const location = window.location;
 
   const currentQuestion = questions[step];
   const currentValue = careerInputs[currentQuestion.key] || '';
@@ -82,11 +84,16 @@ function Onboarding() {
 
   const handleGenerate = async () => {
     setIsGenerating(true);
-    // Simulate generation delay (in production, this calls the API)
+    // After completing onboarding, redirect to login
     setTimeout(() => {
       setIsGenerating(false);
-      navigate('/roadmap');
+      navigate('/login');
     }, 3000);
+  };
+
+  const handleSkipCareerQuestions = () => {
+    setShowSkipModal(false);
+    navigate('/login');
   };
 
   return (
@@ -165,7 +172,7 @@ function Onboarding() {
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between mt-8">
+            <div className="flex items-center justify-between mt-8 gap-3">
               <Button
                 variant="ghost"
                 onClick={handleBack}
@@ -175,6 +182,16 @@ function Onboarding() {
                 <HiArrowLeft className="mr-2" /> Back
               </Button>
 
+              {step === 0 && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowSkipModal(true)}
+                  id="btn-skip-career"
+                >
+                  Skip for now
+                </Button>
+              )}
+
               <Button
                 variant="primary"
                 onClick={handleNext}
@@ -183,10 +200,10 @@ function Onboarding() {
                 id="btn-next"
               >
                 {isGenerating ? (
-                  'AI is generating your roadmap...'
+                  'Preparing your profile...'
                 ) : isLastStep ? (
                   <>
-                    <HiSparkles className="mr-2" /> Generate Roadmap
+                    <HiSparkles className="mr-2" /> Complete & Login
                   </>
                 ) : (
                   <>
@@ -196,6 +213,50 @@ function Onboarding() {
               </Button>
             </div>
           </motion.div>
+        </AnimatePresence>
+
+        {/* Skip Confirmation Modal */}
+        <AnimatePresence>
+          {showSkipModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+              onClick={() => setShowSkipModal(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                onClick={(e) => e.stopPropagation()}
+                className="glass-card p-6 max-w-sm mx-4"
+              >
+                <h3 className="text-xl font-bold text-white mb-3">
+                  Skip Career Questions?
+                </h3>
+                <p className="text-surface-400 mb-6">
+                  You can answer these questions anytime from your dashboard. They'll help us create a better career roadmap for you.
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowSkipModal(false)}
+                    className="flex-1"
+                  >
+                    Continue
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleSkipCareerQuestions}
+                    className="flex-1"
+                  >
+                    Skip
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Step Dots */}
