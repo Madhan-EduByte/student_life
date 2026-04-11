@@ -201,7 +201,9 @@ project/
 ├── database/               # SQL files
 │   ├── init.sql
 │   ├── seed_careers.sql
-│   └── seed_colleges.sql
+│   ├── seed_colleges.sql
+│   ├── seed_users.sql
+│   └── seed_student_profiles.sql
 │
 ├── readme.md               # This file
 └── setup-no-docker.ps1     # Setup script
@@ -280,8 +282,8 @@ mysql -u root -proot123 -e "CREATE DATABASE destinai_db;"
 cd backend
 alembic upgrade head
 
-# Seed data
-python -m app.utils.seed
+# Initialize tables + default data
+python init_db.py
 ```
 
 ---
@@ -314,7 +316,7 @@ npm run test       # Run tests
 cd backend
 pip install -r requirements.txt
 alembic upgrade head
-python -m app.utils.seed
+python init_db.py
 uvicorn app.main:app --reload
 ```
 
@@ -568,8 +570,8 @@ GET    /api/v1/students/profile       Get profile
 
 #### 🚀 Database Content
 
-**Colleges**: 10 top institutions (IIT Bombay, IIT Delhi, IISc, BITS Pilani, VIT, NIT, etc.)
-**Careers**: 15 professions (Software Engineer, Data Scientist, Doctor, CA, UX Designer, etc.)
+**Colleges**: 20 institutions (IIT Bombay, IIT Delhi, IISc, BITS Pilani, VIT, NIT, etc.)
+**Careers**: 20 professions (Software Engineer, Data Scientist, Doctor, CA, UX Designer, etc.)
 **Career Scores**: Automation risk, AI replacement risk, future-proof scores
 **College Courses**: B.Tech, BCA, B.Com across different colleges
 **Streams**: Science, Commerce, Arts, Vocational
@@ -666,7 +668,7 @@ Reset migrations:
 cd backend
 alembic downgrade base
 alembic upgrade head
-python -m app.utils.seed
+python init_db.py
 ```
 
 ### Complete Reset

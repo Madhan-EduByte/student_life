@@ -200,11 +200,9 @@ try {
     $sqlCmd = @"
 mysql -u root -proot -e "CREATE DATABASE IF NOT EXISTS destinai_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -u root -proot destinai_db < database\init.sql
-mysql -u root -proot destinai_db < database\seed_careers.sql
-mysql -u root -proot destinai_db < database\seed_colleges.sql
 "@
     
-    Write-Success "Database created and seeded"
+    Write-Success "Database created"
 }
 catch {
     Write-Warning-Custom "Database setup may need manual configuration"
@@ -223,7 +221,9 @@ try {
     & ".\venv\Scripts\Activate.ps1"
     Write-Host "  Running alembic migrations..." -ForegroundColor Gray
     alembic upgrade head
-    Write-Success "Migrations completed"
+    Write-Host "  Initializing tables + default data..." -ForegroundColor Gray
+    python init_db.py
+    Write-Success "Migrations completed and default data initialized"
     Set-Location ..
 }
 catch {

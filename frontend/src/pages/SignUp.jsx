@@ -6,6 +6,29 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import authService from '../services/authService';
 
+function getSignUpErrorMessage(err) {
+  const detail = err?.response?.data?.detail;
+
+  if (typeof detail === 'string') {
+    return detail;
+  }
+
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => item?.msg)
+      .filter(Boolean);
+    if (messages.length > 0) {
+      return messages.join(', ');
+    }
+  }
+
+  if (detail && typeof detail === 'object' && typeof detail.msg === 'string') {
+    return detail.msg;
+  }
+
+  return 'Sign up failed. Please try again.';
+}
+
 function SignUp() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -45,8 +68,8 @@ function SignUp() {
       setError('Password is required');
       return false;
     }
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters');
       return false;
     }
     if (formData.password !== formData.confirm_password) {
@@ -84,7 +107,7 @@ function SignUp() {
         navigate('/onboarding', { state: { skipOption: true, email: response.email } });
       }, 1500);
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || 'Sign up failed. Please try again.';
+      const errorMsg = getSignUpErrorMessage(err);
       setError(errorMsg);
       console.error('SignUp error:', err);
     } finally {
@@ -200,7 +223,7 @@ function SignUp() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Create a password (min 6 characters)"
+                placeholder="Create a password (min 8 characters)"
                 icon={<HiLockClosed />}
                 disabled={isLoading}
               />
