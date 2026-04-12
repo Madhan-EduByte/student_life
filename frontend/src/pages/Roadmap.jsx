@@ -77,6 +77,8 @@ function Roadmap() {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm)
       });
+      // Automatically generate a new roadmap based on updated answers
+      await handleUpdateRoadmap();
     } catch (e) {
       console.error('Failed to save profile:', e);
     }
@@ -126,15 +128,12 @@ function Roadmap() {
               </h1>
               <p className="text-surface-400 max-w-2xl">{roadmap.summary}</p>
             </div>
-            <button 
-              onClick={handleUpdateRoadmap} 
-              disabled={generating}
-              className="btn-secondary flex items-center gap-2 disabled:opacity-50" 
-              id="btn-update-roadmap"
-            >
-              <HiRefresh size={16} className={generating ? 'animate-spin' : ''} /> 
-              {generating ? 'Generating AI Roadmap...' : 'Update Roadmap'}
-            </button>
+            {generating && (
+              <div className="flex items-center gap-2 text-primary-400 text-sm font-medium bg-primary-900/20 px-4 py-2 rounded-full border border-primary-500/20">
+                <HiRefresh size={16} className="animate-spin" />
+                Generating AI Roadmap...
+              </div>
+            )}
           </div>
         </motion.div>
 

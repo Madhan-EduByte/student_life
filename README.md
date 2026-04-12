@@ -202,7 +202,6 @@ project/
 │   ├── seed_careers.sql
 │   ├── seed_colleges.sql
 │   ├── seed_users.sql
-│   └── seed_student_profiles.sql
 │
 ├── readme.md               # This file
 └── setup-no-docker.ps1     # Setup script
