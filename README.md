@@ -50,7 +50,6 @@
 - Future-proof career score (AI automation risk + 20-year salary projection)
 - AI career simulation — shadow any profession before choosing
 - Micro-milestone engine — weekly actionable tasks
-- Family compass mode — separate parent dashboard
 - Multi-language support (5 languages in Year 1)
 
 ---
@@ -414,7 +413,7 @@ Close all 3 PowerShell windows.
 | Role | Email | Password |
 |---|---|---|
 | Student | `student@example.com` | `password123` |
-| Parent | `parent@example.com` | `password123` |
+| Admin | `admin@example.com` | `password123` |
 | Phone Login | `9876543210` | `password123` |
 
 **Note:** These are non-persistent demo accounts. Any data entered will be stored in the database but not returned after logout.

@@ -10,7 +10,6 @@ import Roadmap from './pages/Roadmap';
 import CollegeMatch from './pages/CollegeMatch';
 import Simulation from './pages/Simulation';
 import Dashboard from './pages/Dashboard';
-import ParentDashboard from './pages/ParentDashboard';
 
 function App() {
   return (
@@ -27,7 +26,6 @@ function App() {
             <Route path="/colleges" element={<CollegeMatch />} />
             <Route path="/simulation" element={<Simulation />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/parent-dashboard" element={<ParentDashboard />} />
           </Routes>
         </AnimatePresence>
       </main>

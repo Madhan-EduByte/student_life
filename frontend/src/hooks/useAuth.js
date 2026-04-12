@@ -20,23 +20,53 @@ export function useAuth() {
 
       // Now get user info with the token in place
       console.log('👤 Fetching user info...');
+      let userData;
       try {
-        const meResponse = await authService.getMe();
-        console.log('✅ User info fetched:', meResponse.data);
-        setAuth(meResponse.data, access_token, refresh_token);
-      } catch (meError) {
-        console.warn('⚠️ Could not fetch user info, using minimal data:', meError.message);
-        // Fallback: extract basic user info from JWT token payload
-        const userData = {
-          id: 1,
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+        const res = await fetch(`${baseUrl}/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${access_token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (res.ok) {
+          userData = await res.json();
+          console.log('✅ User info fetched via /auth/me:', userData);
+        } else {
+          throw new Error(`Fetch /auth/me returned ${res.status}`);
+        }
+      } catch (error) {
+        console.warn('⚠️ Fetch failed. Using fallback data from token.', error.message);
+        
+        let extractedName = '';
+        let extractedRole = 'student';
+        let extractedId = 1;
+        try {
+          // Robust JWT decoding that handles Base64URL and Unicode characters
+          const base64Url = access_token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+          const payload = JSON.parse(jsonPayload);
+          extractedName = payload.full_name || payload.name || '';
+          extractedRole = payload.role || 'student';
+          extractedId = payload.sub || 1;
+        } catch (e) {
+          console.warn('Could not parse JWT payload');
+        }
+        
+        userData = {
+          id: extractedId,
           email: email,
-          role: 'student',
-          full_name: 'User',
+          role: extractedRole,
+          full_name: extractedName || email.split('@')[0].replace(/^\w/, c => c.toUpperCase()),
         };
-        setAuth(userData, access_token, refresh_token);
       }
 
-      navigate('/dashboard');
+      setAuth(userData, access_token, refresh_token);
+      navigate('/roadmap');
       return { success: true };
     } catch (error) {
       console.error('❌ Login error:', {

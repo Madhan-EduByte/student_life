@@ -8,7 +8,6 @@ const features = [
   { icon: <HiAcademicCap size={24} />, title: 'College DNA Matching', desc: 'Match with 15,000+ colleges worldwide based on your profile, budget, and goals.', color: '#22c55e' },
   { icon: <HiChartBar size={24} />, title: 'Future-Proof Score', desc: 'Know the automation risk and 20-year salary projection for any career path.', color: '#f59e0b' },
   { icon: <HiEye size={24} />, title: 'Career Simulation', desc: 'Shadow any profession through AI-powered career simulations before choosing.', color: '#ec4899' },
-  { icon: <HiUserGroup size={24} />, title: 'Family Compass', desc: 'Dedicated parent dashboard to track and support your child\'s career journey.', color: '#06b6d4' },
 ];
 
 const stats = [
