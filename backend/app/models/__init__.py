@@ -12,13 +12,12 @@ from app.models.roadmap import (
     SessionLog,
     StudentOutcome,
 )
-from app.models.student import ParentProfile, StudentProfile
+from app.models.student import StudentProfile
 from app.models.user import User
 
 __all__ = [
     "User",
     "StudentProfile",
-    "ParentProfile",
     "Career",
     "CareerScore",
     "Stream",

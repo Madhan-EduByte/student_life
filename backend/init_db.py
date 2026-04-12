@@ -5,7 +5,6 @@ from app.core.database import Base, engine
 from app.models import (
     User,
     StudentProfile,
-    ParentProfile,
     Career,
     CareerScore,
     Stream,

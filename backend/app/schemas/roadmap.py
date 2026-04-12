@@ -6,15 +6,15 @@ Pydantic schemas for roadmap and milestone endpoints.
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
-from app.schemas.student import CareerInputs
+from app.schemas.student import StudentProfileCreate
 
 
 class RoadmapGenerate(BaseModel):
     """Request to generate an AI roadmap from 6 inputs."""
 
-    career_inputs: CareerInputs
+    career_inputs: StudentProfileCreate
 
 
 class MilestoneResponse(BaseModel):
@@ -55,6 +55,13 @@ class RoadmapResponse(BaseModel):
     milestones: List[MilestoneResponse] = []
     created_at: datetime
     updated_at: datetime
+
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def handle_zero_datetime(cls, v):
+        if isinstance(v, str) and v.startswith('0000-00-00'):
+            return datetime.utcnow()
+        return v
 
     class Config:
         from_attributes = True

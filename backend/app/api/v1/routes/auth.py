@@ -107,7 +107,7 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
     db.commit()
 
     # Create tokens
-    token_data = {"sub": user.id, "email": user.email, "role": user.role}
+    token_data = {"sub": str(user.id), "email": user.email, "role": user.role, "full_name": user.full_name}
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
 
@@ -138,7 +138,7 @@ async def refresh_token(token_data: TokenRefresh, db: Session = Depends(get_db))
         )
 
     # Create new tokens
-    new_token_data = {"sub": user.id, "email": user.email, "role": user.role}
+    new_token_data = {"sub": str(user.id), "email": user.email, "role": user.role, "full_name": user.full_name}
     access_token = create_access_token(new_token_data)
     refresh_token = create_refresh_token(new_token_data)
 
@@ -161,3 +161,22 @@ async def logout(current_user: User = Depends(get_current_user)):
 async def get_me(current_user: User = Depends(get_current_user)):
     """Get current user profile."""
     return current_user
+
+
+@router.get("/user/{email}", response_model=UserResponse)
+async def get_user_by_email(
+    email: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get user information based on their email."""
+    if current_user.email != email and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to view this profile",
+        )
+        
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user

@@ -16,7 +16,7 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8, max_length=128)
     full_name: str = Field(..., min_length=2, max_length=255)
     phone: Optional[str] = Field(None, max_length=20)
-    role: str = Field(default="student", pattern="^(student|parent|counsellor)$")
+    role: str = Field(default="student", pattern="^(student|admin)$")
 
 
 class UserLogin(BaseModel):
