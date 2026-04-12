@@ -9,16 +9,18 @@ INSERT IGNORE INTO users (
   email,
   password_hash,
   full_name,
-  phone,
+  phone,\
   role,
   is_active,
   is_verified,
-  language
+  language,
+  created_at,
+  updated_at
 ) VALUES
-('student@example.com', '$argon2id$v=19$m=65536,t=3,p=4$3xuDEOK8F8K4V2othTBmzA$xGK4tsMmyxSmWpQZUu7RAsJZEEb4Ehbd0/ifMGaM9co', 'John Doe', '9876543210', 'student', TRUE, TRUE, 'en'),
-('admin@example.com', '$argon2id$v=19$m=65536,t=3,p=4$3xuDEOK8F8K4V2othTBmzA$xGK4tsMmyxSmWpQZUu7RAsJZEEb4Ehbd0/ifMGaM9co', 'Admin User', '9876543213', 'admin', TRUE, TRUE, 'en'),
-('student2@example.com', '$argon2id$v=19$m=65536,t=3,p=4$3xuDEOK8F8K4V2othTBmzA$xGK4tsMmyxSmWpQZUu7RAsJZEEb4Ehbd0/ifMGaM9co', 'Alice Johnson', '9876543214', 'student', TRUE, TRUE, 'en'),
-('student3@example.com', '$argon2id$v=19$m=65536,t=3,p=4$3xuDEOK8F8K4V2othTBmzA$xGK4tsMmyxSmWpQZUu7RAsJZEEb4Ehbd0/ifMGaM9co', 'Bob Wilson', '9876543215', 'student', TRUE, TRUE, 'en');
+('student@example.com', '$argon2id$v=19$m=65536,t=3,p=4$3xuDEOK8F8K4V2othTBmzA$xGK4tsMmyxSmWpQZUu7RAsJZEEb4Ehbd0/ifMGaM9co', 'John Doe', '9876543210', 'student', TRUE, TRUE, 'en', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('admin@example.com', '$argon2id$v=19$m=65536,t=3,p=4$3xuDEOK8F8K4V2othTBmzA$xGK4tsMmyxSmWpQZUu7RAsJZEEb4Ehbd0/ifMGaM9co', 'Admin User', '9876543213', 'admin', TRUE, TRUE, 'en', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('student2@example.com', '$argon2id$v=19$m=65536,t=3,p=4$3xuDEOK8F8K4V2othTBmzA$xGK4tsMmyxSmWpQZUu7RAsJZEEb4Ehbd0/ifMGaM9co', 'Alice Johnson', '9876543214', 'student', TRUE, TRUE, 'en', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('student3@example.com', '$argon2id$v=19$m=65536,t=3,p=4$3xuDEOK8F8K4V2othTBmzA$xGK4tsMmyxSmWpQZUu7RAsJZEEb4Ehbd0/ifMGaM9co', 'Bob Wilson', '9876543215', 'student', TRUE, TRUE, 'en', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Seed initial AI inputs for all demo students so Roadmap has data to display
 INSERT IGNORE INTO student_profiles (

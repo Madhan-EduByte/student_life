@@ -31,7 +31,7 @@ function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map((link) => {
+            {NAV_LINKS.filter(link => !isAuthenticated || (link.path !== '/signup' && !link.label.toLowerCase().includes('get started'))).map((link) => {
               const isActive = location.pathname === link.path;
               return (
                 <Link
@@ -143,7 +143,7 @@ function Navbar() {
             style={{ background: 'rgba(15, 23, 42, 0.95)' }}
           >
             <div className="px-4 py-4 space-y-2">
-              {NAV_LINKS.map((link) => (
+              {NAV_LINKS.filter(link => !isAuthenticated || (link.path !== '/signup' && !link.label.toLowerCase().includes('get started'))).map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}

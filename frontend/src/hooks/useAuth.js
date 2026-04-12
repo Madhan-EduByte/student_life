@@ -7,7 +7,7 @@ export function useAuth() {
   const navigate = useNavigate();
   const { user, isAuthenticated, setAuth, logout: clearAuth, setLoading } = useAuthStore();
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, redirectTo = '/roadmap') => {
     setLoading(true);
     try {
       console.log('🔐 Login attempt:', { email });
@@ -66,7 +66,7 @@ export function useAuth() {
       }
 
       setAuth(userData, access_token, refresh_token);
-      navigate('/roadmap');
+      navigate(redirectTo);
       return { success: true };
     } catch (error) {
       console.error('❌ Login error:', {
@@ -87,14 +87,29 @@ export function useAuth() {
   const register = useCallback(async (data) => {
     setLoading(true);
     try {
+      // Ensure full_name exists if the signup form didn't provide it
+      if (!data.full_name) {
+        data.full_name = data.email.split('@')[0].replace(/^\w/, c => c.toUpperCase());
+      }
       await authService.register(data);
       // Auto-login after registration
-      return await login(data.email, data.password);
+      const redirectTo = '/roadmap';
+      const loginResult = await login(data.email, data.password, redirectTo);
+      
+      if (loginResult.success) {
+        // Return a never-resolving promise to prevent the calling component from
+        // executing a hardcoded navigate() that overrides our redirectTo.
+        return new Promise(() => {});
+      }
+      return loginResult;
     } catch (error) {
       setLoading(false);
+      const errorMsg = error.response?.data?.detail || 'Registration failed';
+      // Surface the error (e.g. Email already registered) if the UI is hiding it
+      if (errorMsg.includes('already registered')) alert(`Registration Error: ${errorMsg}. Please use a different email.`);
       return {
         success: false,
-        error: error.response?.data?.detail || 'Registration failed',
+        error: errorMsg,
       };
     }
   }, [login, setLoading]);

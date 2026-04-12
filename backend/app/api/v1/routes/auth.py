@@ -56,7 +56,15 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
     # Create student profile if role is student
     if user.role == "student":
-        profile = StudentProfile(user_id=user.id)
+        profile = StudentProfile(
+            user_id=user.id,
+            interest_areas=user_data.interest_areas,
+            strengths=user_data.strengths,
+            preferred_stream=user_data.preferred_stream,
+            education_level=user_data.education_level,
+            budget_range=user_data.budget_range,
+            location_preference=user_data.location_preference
+        )
         db.add(profile)
 
     db.commit()

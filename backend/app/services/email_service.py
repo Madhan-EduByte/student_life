@@ -95,13 +95,6 @@ The DestinAI Team
             <li>Discover matched colleges and courses</li>
             <li>Start completing weekly milestones</li>
         </ol>
-        <p style="margin-top: 20px;">
-            <a href="{settings.CORS_ORIGINS.split(',')[0]}/onboarding"
-               style="background: #6366f1; color: white; padding: 12px 24px;
-                      border-radius: 8px; text-decoration: none; font-weight: 600;">
-                Start Your Journey
-            </a>
-        </p>
         <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
             Best regards,<br>The DestinAI Team
         </p>

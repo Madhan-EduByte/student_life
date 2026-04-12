@@ -5,11 +5,13 @@ import Footer from './components/common/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
-import Onboarding from './pages/Onboarding';
 import Roadmap from './pages/Roadmap';
 import CollegeMatch from './pages/CollegeMatch';
 import Simulation from './pages/Simulation';
 import Dashboard from './pages/Dashboard';
+import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
+import FAQ from './pages/FAQ';
 
 function App() {
   return (
@@ -21,11 +23,13 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
-            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/roadmap" element={<Roadmap />} />
             <Route path="/colleges" element={<CollegeMatch />} />
             <Route path="/simulation" element={<Simulation />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/faq" element={<FAQ />} />
           </Routes>
         </AnimatePresence>
       </main>

@@ -102,9 +102,9 @@ function SignUp() {
         phone: '',
       });
 
-      // After 1.5 seconds, navigate to onboarding with option to skip
+      // After 1.5 seconds, navigate to roadmap
       setTimeout(() => {
-        navigate('/onboarding', { state: { skipOption: true, email: response.email } });
+        navigate('/roadmap');
       }, 1500);
     } catch (err) {
       const errorMsg = getSignUpErrorMessage(err);
