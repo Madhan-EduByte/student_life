@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard';
 import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
 import FAQ from './pages/FAQ';
+import DashboardOverview from './pages/admin/dashboard/DashboardOverview';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/faq" element={<FAQ />} />
+            <Route path="/admin/dashboard" element={<DashboardOverview />} />
           </Routes>
         </AnimatePresence>
       </main>

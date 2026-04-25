@@ -117,6 +117,21 @@ CREATE TABLE IF NOT EXISTS career_scores (
   FOREIGN KEY (career_id) REFERENCES careers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- ─── Career Simulations ─────────────────────────────
+CREATE TABLE IF NOT EXISTS career_simulations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  career_id INT NOT NULL,
+  career_title VARCHAR(255) DEFAULT NULL,
+  simulation TEXT DEFAULT NULL,
+  daily_tasks TEXT DEFAULT NULL,
+  challenges TEXT DEFAULT NULL,
+  rewards TEXT DEFAULT NULL,
+  typical_salary DOUBLE DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (career_id) REFERENCES careers(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- ─── Colleges ───────────────────────────────────────
 CREATE TABLE IF NOT EXISTS colleges (
   id INT AUTO_INCREMENT PRIMARY KEY,

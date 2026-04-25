@@ -95,3 +95,20 @@ python init_db.py
 ```
 
 > **Note:** The `init_db.py` script automatically reads the `.sql` files in this directory to populate the 20 colleges, 20 careers, and test accounts.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+https://dashboard.aishe.gov.in/hedirectory/#/hedirectory/standaloneDetails/S/3

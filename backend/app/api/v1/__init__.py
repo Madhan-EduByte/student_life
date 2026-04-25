@@ -9,7 +9,7 @@ from app.api.v1.routes import admin, auth, careers, colleges, roadmap, simulatio
 
 api_router = APIRouter(prefix="/api/v1")
 
-api_router.include_router(admin.router)
+api_router.include_router(admin.router, prefix="/admin", tags=["Admin"])
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(students.router, prefix="/students", tags=["Students"])
 api_router.include_router(careers.router, prefix="/careers", tags=["Careers"])

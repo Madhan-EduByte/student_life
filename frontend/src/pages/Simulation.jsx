@@ -1,61 +1,66 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiEye, HiPlay, HiClock, HiCurrencyRupee } from 'react-icons/hi';
 import Button from '../components/common/Button';
 import CareerCard from '../components/career/CareerCard';
 
-const demoCareers = [
-  { id: 1, title: 'Software Engineer', slug: 'software-engineer', description: 'Design, develop, and maintain software applications and systems.', stream: 'science', category: 'Technology', average_salary_entry: 600000, growth_rate: 15, demand_level: 'high', work_environment: 'hybrid', icon: '💻' },
-  { id: 2, title: 'Data Scientist', slug: 'data-scientist', description: 'Analyze complex data to help organizations make better decisions.', stream: 'science', category: 'Technology', average_salary_entry: 700000, growth_rate: 20, demand_level: 'high', work_environment: 'hybrid', icon: '📊' },
-  { id: 3, title: 'UX Designer', slug: 'ux-designer', description: 'Design user experiences for digital products and platforms.', stream: 'arts', category: 'Design', average_salary_entry: 500000, growth_rate: 18, demand_level: 'high', work_environment: 'hybrid', icon: '🎨' },
-  { id: 4, title: 'Product Manager', slug: 'product-manager', description: 'Lead product development from ideation through launch.', stream: 'commerce', category: 'Technology', average_salary_entry: 800000, growth_rate: 16, demand_level: 'high', work_environment: 'hybrid', icon: '🚀' },
-  { id: 5, title: 'Cybersecurity Analyst', slug: 'cybersecurity-analyst', description: 'Protect organizations from cyber threats and attacks.', stream: 'science', category: 'Technology', average_salary_entry: 600000, growth_rate: 22, demand_level: 'high', work_environment: 'hybrid', icon: '🛡️' },
-  { id: 6, title: 'Chartered Accountant', slug: 'chartered-accountant', description: 'Manage financial records, auditing, and tax compliance.', stream: 'commerce', category: 'Finance', average_salary_entry: 700000, growth_rate: 10, demand_level: 'high', work_environment: 'office', icon: '📋' },
-];
-
-const demoSimulation = {
-  career_title: 'Software Engineer',
-  simulation: `You wake up at 8 AM and check your phone for any critical alerts from last night's deployment. After a quick breakfast, you open your laptop and join the morning standup at 9:15 AM — a 15-minute call where your team of 6 shares what they worked on yesterday and plans for today.
-
-Your task for the morning is fixing a tricky bug in the payment processing module. You dive into the codebase, set breakpoints, and trace the issue through multiple service layers. By 11 AM, you've identified the root cause — a race condition in the database connection pool.
-
-After lunch with a colleague (you discuss a new AI feature idea), you spend the afternoon in a design review meeting, reviewing architecture diagrams for a new microservice. You provide feedback on API design and suggest a more efficient data flow pattern.
-
-The last hour of your day is "learning time" — a company policy that lets engineers explore new technologies. Today, you're experimenting with Rust for a side project. You push your bug fix through code review, get two approvals, and merge it to staging.
-
-By 6 PM, you're done — feeling productive and challenged. This is what makes software engineering rewarding: every day brings a new puzzle to solve.`,
-  daily_tasks: [
-    'Morning standup meeting (15 min)',
-    'Code review and bug fixing',
-    'Architecture design discussions',
-    'Feature development and testing',
-    'Learning and experimentation',
-  ],
-  challenges: [
-    'Debugging complex distributed systems',
-    'Meeting tight sprint deadlines',
-    'Keeping up with rapidly evolving technologies',
-  ],
-  rewards: [
-    'Solving complex technical problems',
-    'Building products used by millions',
-    'Continuous learning and growth',
-  ],
-  typical_salary: 1500000,
-};
-
 function Simulation() {
   const [selectedCareer, setSelectedCareer] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulation, setSimulation] = useState(null);
+  const [careers, setCareers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleSimulate = (career) => {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+  // Fetch available careers from API
+  useEffect(() => {
+    const fetchCareers = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${baseUrl}/careers`);
+        if (response.ok) {
+          const data = await response.json();
+          setCareers(data.careers || data);
+          setError(null);
+        } else {
+          setError('Failed to load careers from the server.');
+        }
+      } catch (err) {
+        console.error('Error fetching careers:', err);
+        setError('Failed to connect to the server.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCareers();
+  }, [baseUrl]);
+
+  // Fetch specific career simulation from API
+  const handleSimulate = async (career) => {
     setSelectedCareer(career);
     setIsSimulating(true);
-    setTimeout(() => {
-      setSimulation(demoSimulation);
+    try {
+      const response = await fetch(`${baseUrl}/careers/${career.id}/simulation`);
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Simulate a slight delay for a dramatic "AI Generating" visual effect
+        setTimeout(() => {
+          setSimulation(data);
+          setIsSimulating(false);
+        }, 1500);
+      } else {
+        setIsSimulating(false);
+        alert("Simulation data is not available for this career yet.");
+      }
+    } catch (err) {
+      console.error('Error fetching simulation:', err);
       setIsSimulating(false);
-    }, 2500);
+      alert("An error occurred while launching the simulation.");
+    }
   };
 
   return (
@@ -88,17 +93,40 @@ function Simulation() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <p className="text-sm text-surface-400 mb-6">Select a career to simulate:</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {demoCareers.map((career, i) => (
-                  <CareerCard
-                    key={career.id}
-                    career={career}
-                    onClick={handleSimulate}
-                    index={i}
-                  />
-                ))}
-              </div>
+              {loading && (
+                <div className="text-center py-16">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1 }}
+                    className="inline-block"
+                  >
+                    <div className="w-12 h-12 border-4 border-primary-600/30 border-t-primary-400 rounded-full"></div>
+                  </motion.div>
+                  <p className="text-surface-400 mt-4">Loading simulation catalog...</p>
+                </div>
+              )}
+
+              {error && !loading && (
+                <div className="text-center py-16 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <p className="text-red-400 text-lg">⚠️ {error}</p>
+                </div>
+              )}
+
+              {!loading && !error && (
+                <>
+                  <p className="text-sm text-surface-400 mb-6">Select a career to simulate:</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {careers.map((career, i) => (
+                      <CareerCard
+                        key={career.id}
+                        career={career}
+                        onClick={handleSimulate}
+                        index={i}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </motion.div>
           ) : (
             <motion.div

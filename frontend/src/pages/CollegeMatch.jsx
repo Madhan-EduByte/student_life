@@ -21,8 +21,8 @@ function CollegeMatch() {
         setColleges(response.data.colleges || []);
         setError(null);
       } catch (err) {
-        console.error('Error fetching colleges:', err);
-        setError('Failed to load colleges');
+        console.error('Failed to load careers from the server.:', err);
+        setError('Failed to load careers from the server.');
         setColleges([]);
       } finally {
         setLoading(false);
@@ -136,7 +136,6 @@ function CollegeMatch() {
         {error && !loading && (
           <div className="text-center py-16 bg-red-500/10 border border-red-500/30 rounded-lg">
             <p className="text-red-400 text-lg">⚠️ {error}</p>
-            <p className="text-surface-600 text-sm mt-2">Please try again later or check your internet connection.</p>
           </div>
         )}
 

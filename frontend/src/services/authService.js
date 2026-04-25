@@ -7,7 +7,14 @@ export const authService = {
   },
   login: (data) => {
     console.log('📤 POST /auth/login', { email: data.email });
-    return api.post('/auth/login', data);
+    
+    const formData = new URLSearchParams();
+    formData.append('username', data.email);
+    formData.append('password', data.password);
+
+    return api.post('/auth/login', formData, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
   },
   refreshToken: (refreshToken) => {
     console.log('📤 POST /auth/refresh');

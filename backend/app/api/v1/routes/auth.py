@@ -6,6 +6,7 @@ Registration, login, token refresh, and logout endpoints.
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -77,9 +78,9 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-async def login(user_data: UserLogin, db: Session = Depends(get_db)):
+async def login(user_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Login and receive JWT tokens."""
-    user = db.query(User).filter(User.email == user_data.email).first()
+    user = db.query(User).filter(User.email == user_data.username).first()
 
     if not user:
         raise HTTPException(
