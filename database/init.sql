@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(255) NOT NULL,
   phone VARCHAR(20) DEFAULT NULL,
-  role ENUM('student', 'parent', 'counsellor', 'admin') DEFAULT 'student',
+  role ENUM('student', 'admin') DEFAULT 'student',
   is_active BOOLEAN DEFAULT TRUE,
   is_verified BOOLEAN DEFAULT FALSE,
   avatar_url VARCHAR(500) DEFAULT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS student_profiles (
   user_id INT NOT NULL UNIQUE,
   interest_areas TEXT DEFAULT NULL,
   strengths TEXT DEFAULT NULL,
-  preferred_stream ENUM('science', 'commerce', 'arts', 'vocational') DEFAULT NULL,
+  preferred_stream ENUM('science', 'commerce', 'arts') DEFAULT NULL,
   education_level VARCHAR(100) DEFAULT NULL,
   budget_range VARCHAR(100) DEFAULT NULL,
   location_preference VARCHAR(255) DEFAULT NULL,
@@ -52,28 +52,6 @@ CREATE TABLE IF NOT EXISTS student_profiles (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- ─── Parent Profiles ────────────────────────────────
-CREATE TABLE IF NOT EXISTS parent_profiles (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL UNIQUE,
-  linked_student_id INT DEFAULT NULL,
-  relationship_type VARCHAR(50) DEFAULT 'parent',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (linked_student_id) REFERENCES users(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
-
--- ─── Streams ────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS streams (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL UNIQUE,
-  slug VARCHAR(100) NOT NULL UNIQUE,
-  description TEXT DEFAULT NULL,
-  icon VARCHAR(100) DEFAULT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 -- ─── Careers ────────────────────────────────────────
