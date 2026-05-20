@@ -6,7 +6,7 @@ Pydantic schemas for authentication endpoints.
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class UserCreate(BaseModel):
@@ -16,7 +16,15 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8, max_length=128)
     full_name: str = Field(..., min_length=2, max_length=255)
     phone: Optional[str] = Field(None, max_length=20)
-    role: str = Field(default="student", pattern="^(student|parent|counsellor)$")
+    role: str = Field(default="student", pattern="^(student|admin)$")
+    
+    # Optional AI Profile Inputs during registration
+    interest_areas: Optional[str] = None
+    strengths: Optional[str] = None
+    preferred_stream: Optional[str] = None
+    education_level: Optional[str] = None
+    budget_range: Optional[str] = None
+    location_preference: Optional[str] = None
 
 
 class UserLogin(BaseModel):
@@ -54,6 +62,13 @@ class UserResponse(BaseModel):
     avatar_url: Optional[str] = None
     language: str
     created_at: datetime
+
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def handle_zero_datetime(cls, v):
+        if isinstance(v, str) and v.startswith('0000-00-00'):
+            return datetime.utcnow()
+        return v
 
     class Config:
         from_attributes = True

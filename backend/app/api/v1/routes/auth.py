@@ -6,6 +6,7 @@ Registration, login, token refresh, and logout endpoints.
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -56,7 +57,15 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
     # Create student profile if role is student
     if user.role == "student":
-        profile = StudentProfile(user_id=user.id)
+        profile = StudentProfile(
+            user_id=user.id,
+            interest_areas=user_data.interest_areas,
+            strengths=user_data.strengths,
+            preferred_stream=user_data.preferred_stream,
+            education_level=user_data.education_level,
+            budget_range=user_data.budget_range,
+            location_preference=user_data.location_preference
+        )
         db.add(profile)
 
     db.commit()
@@ -69,9 +78,9 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-async def login(user_data: UserLogin, db: Session = Depends(get_db)):
+async def login(user_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Login and receive JWT tokens."""
-    user = db.query(User).filter(User.email == user_data.email).first()
+    user = db.query(User).filter(User.email == user_data.username).first()
 
     if not user:
         raise HTTPException(
@@ -107,7 +116,7 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
     db.commit()
 
     # Create tokens
-    token_data = {"sub": user.id, "email": user.email, "role": user.role}
+    token_data = {"sub": str(user.id), "email": user.email, "role": user.role, "full_name": user.full_name}
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
 
@@ -138,7 +147,7 @@ async def refresh_token(token_data: TokenRefresh, db: Session = Depends(get_db))
         )
 
     # Create new tokens
-    new_token_data = {"sub": user.id, "email": user.email, "role": user.role}
+    new_token_data = {"sub": str(user.id), "email": user.email, "role": user.role, "full_name": user.full_name}
     access_token = create_access_token(new_token_data)
     refresh_token = create_refresh_token(new_token_data)
 
@@ -161,3 +170,22 @@ async def logout(current_user: User = Depends(get_current_user)):
 async def get_me(current_user: User = Depends(get_current_user)):
     """Get current user profile."""
     return current_user
+
+
+@router.get("/user/{email}", response_model=UserResponse)
+async def get_user_by_email(
+    email: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get user information based on their email."""
+    if current_user.email != email and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to view this profile",
+        )
+        
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user

@@ -20,17 +20,17 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-this-in-production"
 
     # ── Database — MySQL ─────────────────────────────────
-    DB_HOST: str = "mysql"
+    DB_HOST: str = "localhost"
     DB_PORT: int = 3306
     DB_NAME: str = "destinai_db"
-    DB_USER: str = "destinai_user"
-    DB_PASSWORD: str = "password"
-    DB_ROOT_PASSWORD: str = "rootpassword"
+    DB_USER: str = "root"
+    DB_PASSWORD: str = "root123"
+    DB_ROOT_PASSWORD: str = "root123"
 
     @property
     def DATABASE_URL(self) -> str:
         return (
-            f"mysql://{self.DB_USER}:{self.DB_PASSWORD}"
+            f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}"
             f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         )
 

@@ -3,12 +3,16 @@ import { AnimatePresence } from 'framer-motion';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import Home from './pages/Home';
-import Onboarding from './pages/Onboarding';
+import Login from './pages/Login';
+import SignUp from './pages/SignUp';
 import Roadmap from './pages/Roadmap';
 import CollegeMatch from './pages/CollegeMatch';
 import Simulation from './pages/Simulation';
 import Dashboard from './pages/Dashboard';
-import ParentDashboard from './pages/ParentDashboard';
+import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
+import FAQ from './pages/FAQ';
+import DashboardOverview from './pages/admin/dashboard/DashboardOverview';
 
 function App() {
   return (
@@ -18,12 +22,16 @@ function App() {
         <AnimatePresence mode="wait">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
             <Route path="/roadmap" element={<Roadmap />} />
             <Route path="/colleges" element={<CollegeMatch />} />
             <Route path="/simulation" element={<Simulation />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/parent-dashboard" element={<ParentDashboard />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/admin/dashboard" element={<DashboardOverview />} />
           </Routes>
         </AnimatePresence>
       </main>

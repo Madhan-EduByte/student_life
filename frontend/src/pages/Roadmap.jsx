@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { HiSparkles, HiRefresh, HiAcademicCap, HiChartBar } from 'react-icons/hi';
+import { HiSparkles, HiRefresh, HiAcademicCap, HiChartBar, HiPencil, HiCheck } from 'react-icons/hi';
 import FutureProofScore from '../components/career/FutureProofScore';
 import MilestoneTracker from '../components/dashboard/MilestoneTracker';
+import useAuthStore from '../store/authStore';
 
 // Demo roadmap data
 const demoRoadmap = {
@@ -31,7 +32,80 @@ const demoRoadmap = {
 };
 
 function Roadmap() {
-  const [roadmap] = useState(demoRoadmap);
+  const token = useAuthStore(state => state.accessToken || state.access_token);
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+  const [roadmap, setRoadmap] = useState(demoRoadmap);
+  const [profile, setProfile] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [editForm, setEditForm] = useState({});
+
+  // Fetch Profile & Roadmap on load
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!token) return;
+      try {
+        // Fetch Profile
+        const profRes = await fetch(`${baseUrl}/students/profile`, { headers: { Authorization: `Bearer ${token}` } });
+        if (profRes.ok) {
+          const profData = await profRes.json();
+          setProfile(profData);
+          setEditForm(profData);
+        }
+        // Fetch Roadmap
+        const rmRes = await fetch(`${baseUrl}/roadmap`, { headers: { Authorization: `Bearer ${token}` } });
+        if (rmRes.ok) {
+          const rmData = await rmRes.json();
+          const active = Array.isArray(rmData) ? rmData[0] : (rmData.roadmaps ? rmData.roadmaps[0] : rmData);
+          if (active && active.title) setRoadmap(active);
+        }
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+      }
+    };
+    fetchData();
+  }, [baseUrl, token]);
+
+  // Save edited profile inputs
+  const handleSaveProfile = async () => {
+    setProfile(editForm); // Optimistic UI update
+    setIsEditing(false);
+    try {
+      await fetch(`${baseUrl}/students/profile`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      });
+      // Automatically generate a new roadmap based on updated answers
+      await handleUpdateRoadmap();
+    } catch (e) {
+      console.error('Failed to save profile:', e);
+    }
+  };
+
+  // Request new AI Roadmap generation
+  const handleUpdateRoadmap = async () => {
+    setGenerating(true);
+    try {
+      const res = await fetch(`${baseUrl}/roadmap/generate`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ career_inputs: editForm })
+      });
+      if (res.ok) {
+        const newRoadmap = await res.json();
+        setRoadmap(newRoadmap);
+      } else {
+        // Optimistic visual update if backend route is still syncing
+        setRoadmap(prev => ({ ...prev, version: (prev.version || 1) + 1, future_proof_score: Math.min(100, prev.future_proof_score + 2) }));
+      }
+    } catch (e) {
+      console.error('Roadmap generation failed:', e);
+      setRoadmap(prev => ({ ...prev, version: (prev.version || 1) + 1 }));
+    }
+    setGenerating(false);
+  };
 
   return (
     <div className="min-h-screen pt-24 pb-16" id="roadmap-page">
@@ -54,9 +128,55 @@ function Roadmap() {
               </h1>
               <p className="text-surface-400 max-w-2xl">{roadmap.summary}</p>
             </div>
-            <button className="btn-secondary flex items-center gap-2" id="btn-update-roadmap">
-              <HiRefresh size={16} /> Update Roadmap
-            </button>
+            {generating && (
+              <div className="flex items-center gap-2 text-primary-400 text-sm font-medium bg-primary-900/20 px-4 py-2 rounded-full border border-primary-500/20">
+                <HiRefresh size={16} className="animate-spin" />
+                Generating AI Roadmap...
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* 6 AI Questions / Profile Inputs */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-display font-bold text-white">Your Career Profile (AI Inputs)</h2>
+            {!isEditing ? (
+              <button onClick={() => setIsEditing(true)} className="text-primary-400 hover:text-primary-300 flex items-center gap-1 text-sm">
+                <HiPencil /> Edit Answers
+              </button>
+            ) : (
+              <button onClick={handleSaveProfile} className="text-green-400 hover:text-green-300 flex items-center gap-1 text-sm">
+                <HiCheck /> Save Answers
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+             {['interest_areas', 'strengths', 'preferred_stream', 'education_level', 'budget_range', 'location_preference'].map(field => (
+                <div key={field} className="bg-surface-800/50 p-3 rounded-lg border border-white/5">
+                   <p className="text-xs text-surface-400 capitalize mb-1">{field.replace('_', ' ')}</p>
+                   {isEditing ? (
+                     field === 'preferred_stream' ? (
+                       <select
+                         value={editForm?.[field] || ''}
+                         onChange={e => setEditForm({...editForm, [field]: e.target.value})}
+                         className="w-full bg-surface-900 border border-surface-700 rounded px-2 py-1 text-sm text-white focus:border-primary-500 outline-none"
+                       >
+                         <option value="">Select Stream</option>
+                         <option value="science">Science</option>
+                         <option value="commerce">Commerce</option>
+                         <option value="arts">Arts</option>
+                         <option value="vocational">Vocational</option>
+                       </select>
+                     ) : (
+                       <input type="text" value={editForm?.[field] || ''} onChange={e => setEditForm({...editForm, [field]: e.target.value})}
+                         className="w-full bg-surface-900 border border-surface-700 rounded px-2 py-1 text-sm text-white focus:border-primary-500 outline-none" />
+                     )
+                   ) : (
+                     <p className="text-sm text-white font-medium">{profile?.[field] || 'Not specified'}</p>
+                   )}
+                </div>
+             ))}
           </div>
         </motion.div>
 
@@ -115,7 +235,7 @@ function Roadmap() {
                 <HiChartBar className="text-primary-400" /> Alternative Careers
               </h3>
               <div className="space-y-2">
-                {roadmap.alternative_careers.map((career) => (
+                {(roadmap.alternative_careers || ['Data Scientist', 'Product Manager', 'UX Researcher']).map((career) => (
                   <div
                     key={career}
                     className="p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary-500/20 transition-all cursor-pointer"

@@ -1,8 +1,11 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { HiClipboardList, HiTrendingUp, HiMap, HiAcademicCap } from 'react-icons/hi';
 import MilestoneTracker from '../components/dashboard/MilestoneTracker';
 import ProgressChart from '../components/dashboard/ProgressChart';
 import FutureProofScore from '../components/career/FutureProofScore';
+import useAuth from '../hooks/useAuth';
+import useAuthStore from '../store/authStore';
 
 const demoMilestones = Array.from({ length: 12 }, (_, i) => ({
   id: i + 1, week_number: i + 1,
@@ -15,13 +18,38 @@ const demoMilestones = Array.from({ length: 12 }, (_, i) => ({
 }));
 
 function Dashboard() {
-  const completed = demoMilestones.filter(m => m.is_completed).length;
-  const total = demoMilestones.length;
+  const { user } = useAuth();
+  const token = useAuthStore(state => state.accessToken || state.access_token);
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+  const [roadmap, setRoadmap] = useState(null);
+
+  useEffect(() => {
+    const fetchRoadmap = async () => {
+      if (!token) return;
+      try {
+        const res = await fetch(`${baseUrl}/roadmap`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          const active = Array.isArray(data) ? data[0] : (data.roadmaps ? data.roadmaps[0] : data);
+          if (active && active.milestones) setRoadmap(active);
+        }
+      } catch (err) {
+        console.error('Failed to fetch dashboard roadmap:', err);
+      }
+    };
+    fetchRoadmap();
+  }, [baseUrl, token]);
+
+  const activeMilestones = roadmap?.milestones || demoMilestones;
+  const completed = activeMilestones.filter(m => m.is_completed).length;
+  const total = activeMilestones.length;
+  const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   const stats = [
     { icon: <HiClipboardList size={20} />, label: 'Milestones Done', value: `${completed}/${total}`, color: '#6366f1' },
-    { icon: <HiTrendingUp size={20} />, label: 'Progress', value: `${Math.round((completed / total) * 100)}%`, color: '#22c55e' },
-    { icon: <HiMap size={20} />, label: 'Career Path', value: 'Software Eng.', color: '#d946ef' },
+    { icon: <HiTrendingUp size={20} />, label: 'Progress', value: `${progressPercent}%`, color: '#22c55e' },
+    { icon: <HiMap size={20} />, label: 'Career Path', value: roadmap?.career_path || 'Software Eng.', color: '#d946ef' },
     { icon: <HiAcademicCap size={20} />, label: 'Matched Colleges', value: '10', color: '#f59e0b' },
   ];
 
@@ -30,7 +58,7 @@ function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <h1 className="text-3xl font-display font-bold text-white mb-1">
-            Welcome back, <span className="gradient-text">Student</span> 👋
+            Welcome back, <span className="gradient-text">{user?.full_name ? user.full_name.split(' ')[0] : 'Student'}</span> 👋
           </h1>
           <p className="text-surface-400">Here's your career journey overview.</p>
         </motion.div>
@@ -49,18 +77,18 @@ function Dashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-2">
-            <ProgressChart milestones={demoMilestones} />
+            <ProgressChart milestones={activeMilestones} />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
             className="glass-card p-6 flex flex-col items-center justify-center">
             <h3 className="font-display font-bold text-white mb-6">Your Career Score</h3>
-            <FutureProofScore score={78} size="lg" />
+            <FutureProofScore score={roadmap?.future_proof_score || 78} size="lg" />
             <p className="text-xs text-surface-500 mt-4 text-center">Based on automation risk, market demand, and salary growth</p>
           </motion.div>
         </div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="mt-6">
-          <MilestoneTracker milestones={demoMilestones} />
+          <MilestoneTracker milestones={activeMilestones} />
         </motion.div>
       </div>
     </div>

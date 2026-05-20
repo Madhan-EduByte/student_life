@@ -22,15 +22,12 @@ function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">Platform</h3>
+            <h3 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">Quick Links</h3>
             <ul className="space-y-2">
-              {['Career Assessment', 'AI Roadmap', 'College Match', 'Career Simulation'].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">
-                    {item}
-                  </a>
-                </li>
-              ))}
+              <li><Link to="/roadmap" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Career Guide</Link></li>
+              <li><Link to="/colleges" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">College Database</Link></li>
+              <li><Link to="/simulation" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Simulate</Link></li>
+              <li><Link to="/dashboard" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Dashboard</Link></li>
             </ul>
           </div>
 
@@ -38,13 +35,8 @@ function Footer() {
           <div>
             <h3 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">Resources</h3>
             <ul className="space-y-2">
-              {['Career Guide', 'College Database', 'Blog', 'FAQ'].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">
-                    {item}
-                  </a>
-                </li>
-              ))}
+              <li><Link to="/blog" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Blog</Link></li>
+              <li><Link to="/faq" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">FAQ</Link></li>
             </ul>
           </div>
 
@@ -53,18 +45,16 @@ function Footer() {
             <h3 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">Contact</h3>
             <ul className="space-y-2">
               <li className="text-surface-400 text-sm">support@destinai.com</li>
-              <li className="text-surface-400 text-sm">APS College of Arts and Science</li>
+              <li className="text-surface-400 text-sm">DestinAi</li>
               <li className="text-surface-400 text-sm">Bangalore, India</li>
             </ul>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-surface-500 text-sm">
-            © {new Date().getFullYear()} {APP_NAME}. BCA Final Year Project — APS College.
-          </p>
-          <p className="text-surface-600 text-xs italic">
+        <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-center items-center gap-4">
+
+          <p className="text-surface-600 text-xs italic text-center w-full">
             Built with purpose. Guided by AI. Forged for every student on earth.
           </p>
         </div>

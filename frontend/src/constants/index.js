@@ -52,7 +52,6 @@ export const MILESTONE_CATEGORIES = {
 
 export const NAV_LINKS = [
   { path: '/', label: 'Home' },
-  { path: '/onboarding', label: 'Get Started' },
   { path: '/roadmap', label: 'Roadmap' },
   { path: '/colleges', label: 'Colleges' },
   { path: '/simulation', label: 'Simulate' },

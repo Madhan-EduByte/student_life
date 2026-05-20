@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { HiLightningBolt, HiAcademicCap, HiMap, HiEye, HiChartBar, HiUserGroup } from 'react-icons/hi';
+import useAuthStore from '../store/authStore';
 
 const features = [
   { icon: <HiLightningBolt size={24} />, title: '6-Question AI Engine', desc: 'Answer just 6 smart questions and get a comprehensive career roadmap powered by advanced AI.', color: '#6366f1' },
@@ -8,7 +9,6 @@ const features = [
   { icon: <HiAcademicCap size={24} />, title: 'College DNA Matching', desc: 'Match with 15,000+ colleges worldwide based on your profile, budget, and goals.', color: '#22c55e' },
   { icon: <HiChartBar size={24} />, title: 'Future-Proof Score', desc: 'Know the automation risk and 20-year salary projection for any career path.', color: '#f59e0b' },
   { icon: <HiEye size={24} />, title: 'Career Simulation', desc: 'Shadow any profession through AI-powered career simulations before choosing.', color: '#ec4899' },
-  { icon: <HiUserGroup size={24} />, title: 'Family Compass', desc: 'Dedicated parent dashboard to track and support your child\'s career journey.', color: '#06b6d4' },
 ];
 
 const stats = [
@@ -19,6 +19,8 @@ const stats = [
 ];
 
 function Home() {
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+
   return (
     <div className="relative" id="home-page">
       {/* ─── Hero Section ─────────────────────────────── */}
@@ -72,9 +74,15 @@ function Home() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Link to="/onboarding" className="btn-primary text-lg px-8 py-4" id="hero-cta">
-              Start Your Journey →
-            </Link>
+            {!isAuthenticated ? (
+              <Link to="/signup" className="btn-primary text-lg px-8 py-4" id="hero-cta">
+                Start Your Journey →
+              </Link>
+            ) : (
+              <Link to="/dashboard" className="btn-primary text-lg px-8 py-4" id="hero-cta">
+                Go to Dashboard →
+              </Link>
+            )}
             <Link to="/simulation" className="btn-secondary text-lg px-8 py-4" id="hero-simulate">
               Try Career Simulation
             </Link>
@@ -197,9 +205,15 @@ function Home() {
 
           {/* CTA */}
           <div className="text-center mt-16">
-            <Link to="/onboarding" className="btn-primary text-lg px-10 py-4" id="how-it-works-cta">
-              Begin Your Assessment →
-            </Link>
+            {!isAuthenticated ? (
+              <Link to="/signup" className="btn-primary text-lg px-10 py-4" id="how-it-works-cta">
+                Begin Your Assessment →
+              </Link>
+            ) : (
+              <Link to="/dashboard" className="btn-primary text-lg px-10 py-4" id="how-it-works-cta">
+                View Your Dashboard →
+              </Link>
+            )}
           </div>
         </div>
       </section>

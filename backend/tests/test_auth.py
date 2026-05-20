@@ -45,8 +45,8 @@ def test_login_success(client, test_user_data):
     # Login
     response = client.post(
         "/api/v1/auth/login",
-        json={
-            "email": test_user_data["email"],
+        data={
+            "username": test_user_data["email"],
             "password": test_user_data["password"],
         },
     )
@@ -62,7 +62,7 @@ def test_login_wrong_password(client, test_user_data):
     client.post("/api/v1/auth/register", json=test_user_data)
     response = client.post(
         "/api/v1/auth/login",
-        json={"email": test_user_data["email"], "password": "WrongPassword"},
+        data={"username": test_user_data["email"], "password": "WrongPassword"},
     )
     assert response.status_code == 401
 
@@ -73,8 +73,8 @@ def test_get_me_authenticated(client, test_user_data):
     client.post("/api/v1/auth/register", json=test_user_data)
     login_response = client.post(
         "/api/v1/auth/login",
-        json={
-            "email": test_user_data["email"],
+        data={
+            "username": test_user_data["email"],
             "password": test_user_data["password"],
         },
     )

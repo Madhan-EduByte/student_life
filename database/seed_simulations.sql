@@ -1,0 +1,10 @@
+-- 1. Create Careers Table
+-- =============================================
+-- DestinAI — Career Simulations Seed Data
+-- =============================================
+
+USE destinai_db;
+
+-- 1. Insert Base Simulation for Software Engineer (Matches ID 1 in seed_careers.sql)
+INSERT INTO career_simulations (career_id, career_title, simulation, daily_tasks, challenges, rewards, typical_salary) VALUES
+(1, 'Software Engineer', 'You wake up at 8 AM and check your phone for any critical alerts from last night''s deployment. After a quick breakfast, you open your laptop and join the morning standup at 9:15 AM — a 15-minute call where your team of 6 shares what they worked on yesterday and plans for today.\n\nYour task for the morning is fixing a tricky bug in the payment processing module. You dive into the codebase, set breakpoints, and trace the issue through multiple service layers. By 11 AM, you''ve identified the root cause — a race condition in the database connection pool.\n\nAfter lunch with a colleague (you discuss a new AI feature idea), you spend the afternoon in a design review meeting, reviewing architecture diagrams for a new microservice. You provide feedback on API design and suggest a more efficient data flow pattern.\n\nThe last hour of your day is "learning time" — a company policy that lets engineers explore new technologies. Today, you''re experimenting with Rust for a side project. You push your bug fix through code review, get two approvals, and merge it to staging.\n\nBy 6 PM, you''re done — feeling productive and challenged. This is what makes software engineering rewarding: every day brings a new puzzle to solve.', '["Morning standup meeting (15 min)", "Code review and bug fixing", "Architecture design discussions", "Feature development and testing", "Learning and experimentation"]', '["Debugging complex distributed systems", "Meeting tight sprint deadlines", "Keeping up with rapidly evolving technologies"]', '["Solving complex technical problems", "Building products used by millions", "Continuous learning and growth"]', 1500000);

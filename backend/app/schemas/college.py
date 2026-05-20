@@ -23,6 +23,30 @@ class CollegeFilters(BaseModel):
     per_page: int = 20
 
 
+class CollegeCreate(BaseModel):
+    """Schema for creating a college."""
+
+    name: str
+    slug: str
+    university: Optional[str] = None
+    type: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = "India"
+    website: Optional[str] = None
+    logo_url: Optional[str] = None
+    banner_url: Optional[str] = None
+    description: Optional[str] = None
+    established_year: Optional[int] = None
+    accreditation: Optional[str] = None
+    nirf_rank: Optional[int] = None
+    fee_range_min: Optional[float] = None
+    fee_range_max: Optional[float] = None
+    placement_rate: Optional[float] = None
+    average_package: Optional[float] = None
+    highest_package: Optional[float] = None
+
+
 class CollegeCourseResponse(BaseModel):
     """College course response."""
 

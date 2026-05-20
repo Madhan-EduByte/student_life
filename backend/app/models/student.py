@@ -51,25 +51,3 @@ class StudentProfile(Base):
 
     def __repr__(self):
         return f"<StudentProfile(id={self.id}, user_id={self.user_id})>"
-
-
-class ParentProfile(Base):
-    """Parent profile linked to a user and a student."""
-
-    __tablename__ = "parent_profiles"
-
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
-    linked_student_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    relationship_type = Column(String(50), default="parent", nullable=True)
-
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
-
-    # Relationships
-    user = relationship("User", back_populates="parent_profile", foreign_keys=[user_id])
-
-    def __repr__(self):
-        return f"<ParentProfile(id={self.id}, user_id={self.user_id})>"

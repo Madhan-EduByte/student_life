@@ -22,7 +22,7 @@ class User(Base):
     full_name = Column(String(255), nullable=False)
     phone = Column(String(20), nullable=True)
     role = Column(
-        Enum("student", "parent", "counsellor", "admin", name="user_role"),
+        Enum("student", "admin", name="user_role"),
         default="student",
         nullable=False,
     )
@@ -38,12 +38,9 @@ class User(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
-    # Relationships
+    # Relationships - Use lazy string evaluation to avoid circular imports
     student_profile = relationship(
         "StudentProfile", back_populates="user", uselist=False, cascade="all, delete"
-    )
-    parent_profile = relationship(
-        "ParentProfile", back_populates="user", uselist=False, cascade="all, delete"
     )
     roadmaps = relationship("Roadmap", back_populates="user", cascade="all, delete")
 
