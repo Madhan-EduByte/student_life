@@ -96,82 +96,82 @@
 - Storage: 10 GB free
 - **No Docker, WSL2, or virtual environments**
 
-#### Install These 4 Apps
+        #### Install These 4 Apps
 
-1. **Python 3.11+**
-   - Download: https://www.python.org/downloads/
-   - ✅ Check "Add Python to PATH"
-   - Restart computer
+        1. **Python 3.11+**
+        - Download: https://www.python.org/downloads/
+        - ✅ Check "Add Python to PATH"
+        - Restart computer
 
-2. **Node.js 20+ (LTS)**
-   - Download: https://nodejs.org/
-   - Restart computer
+        2. **Node.js 20+ (LTS)**
+        - Download: https://nodejs.org/
+        - Restart computer
 
-3. **MySQL 8.0+**
-   - Download: https://dev.mysql.com/downloads/mysql/
-   - Password: `root`
-   - ✅ Check "Install as Windows Service"
-   - Restart computer
+        3. **MySQL 8.0+**
+        - Download: https://dev.mysql.com/downloads/mysql/
+        - Password: `root`
+        - ✅ Check "Install as Windows Service"
+        - Restart computer
 
-4. **Redis 7+**
-   - Download: https://github.com/microsoftarchive/redis/releases
-   - Extract to: `C:\Redis\`
+        4. **Redis 7+**
+        - Download: https://github.com/microsoftarchive/redis/releases
+        - Extract to: `C:\Redis\`
 
-#### Verify Installation
+        #### Verify Installation
 
-```powershell
-python --version
-node --version
-npm --version
-mysql --version
-redis-cli --version
-```
+        ```powershell
+        python --version
+        node --version
+        npm --version
+        mysql --version
+        redis-cli --version
+        ```
 
-All should show version numbers.
+        All should show version numbers.
 
----
+        ---
 
-## Quick Start
+        ## Quick Start
 
-### Step 1: Install 4 Apps (45 minutes)
+        ### Step 1: Install 4 Apps (45 minutes)
 
-Follow the installation steps above. **Remember to restart after each app.**
+        Follow the installation steps above. **Remember to restart after each app.**
 
-### Step 2: Run Setup (5 minutes)
+        ### Step 2: Run Setup (5 minutes)
 
-Open PowerShell in your project folder:
+        Open PowerShell in your project folder:
 
-```powershell
-.\setup-no-docker.ps1
-```
+        ```powershell
+        .\setup-no-docker.ps1
+        ```
 
-Wait for completion message.
+        Wait for completion message.
 
-### Step 3: Start Services (3 PowerShell Windows)
+        ### Step 3: Start Services (3 PowerShell Windows)
 
-**Terminal 1 — Redis:**
-```powershell
-C:\Redis\redis-server.exe
-```
-Should show: `Ready to accept connections`
+        **Terminal 1 — Redis:**
+        ```powershell
+        C:\Redis\redis-server.exe
+        ```
+        Should show: `Ready to accept connections`
 
-**Terminal 2 — Backend:**
-```powershell
-cd backend
-uvicorn app.main:app --reload
-```
-Should show: `Uvicorn running on http://0.0.0.0:8000`
+        **Terminal 2 — Backend:**
+        ```powershell
+        cd backend
+        uvicorn app.main:app --reload
+        ```
+        Should show: `Uvicorn running on http://0.0.0.0:8000`
 
-**Terminal 3 — Frontend:**
-```powershell
-cd frontend
-npm run dev
-```
-Should show: `Local: http://localhost:5173`
+        **Terminal 3 — Frontend:**
+        ```powershell
+        cd frontend
+        npm run dev
+        ```
+        Should show: `Local: http://localhost:5173`
 
-### Step 4: Open Browser
+        ### Step 4: Open Browser
 
-Go to: **http://localhost:5173**
+        Go to: **http://localhost:5173**
 
 ---
 
