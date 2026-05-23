@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { HiSparkles, HiRefresh, HiAcademicCap, HiChartBar, HiPencil, HiCheck } from 'react-icons/hi';
+import { HiSparkles, HiRefresh, HiAcademicCap, HiChartBar, HiPencil, HiCheck, HiX } from 'react-icons/hi';
 import FutureProofScore from '../components/career/FutureProofScore';
 import MilestoneTracker from '../components/dashboard/MilestoneTracker';
+import CareerProfileForm from '../components/common/CareerProfileForm';
+import Button from '../components/common/Button';
 import useAuthStore from '../store/authStore';
 
 // Demo roadmap data
@@ -39,7 +41,17 @@ function Roadmap() {
   const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [editForm, setEditForm] = useState({});
+  const [careerProfile, setCareerProfile] = useState({
+    interests: [],
+    strengths: [],
+    industry_stream: '',
+    education_level: '',
+    budget: '',
+    location: '',
+    work_life_balance: '',
+    risk_tolerance: '',
+    interaction_style: '',
+  });
 
   // Fetch Profile & Roadmap on load
   useEffect(() => {
@@ -51,7 +63,18 @@ function Roadmap() {
         if (profRes.ok) {
           const profData = await profRes.json();
           setProfile(profData);
-          setEditForm(profData);
+          // Map profile data to careerProfile state
+          setCareerProfile({
+            interests: Array.isArray(profData.interests) ? profData.interests : (profData.interests ? [profData.interests] : []),
+            strengths: Array.isArray(profData.strengths) ? profData.strengths : (profData.strengths ? [profData.strengths] : []),
+            industry_stream: profData.industry_stream || profData.preferred_stream || '',
+            education_level: profData.education_level || '',
+            budget: profData.budget || profData.budget_range || '',
+            location: profData.location || profData.location_preference || '',
+            work_life_balance: profData.work_life_balance || '',
+            risk_tolerance: profData.risk_tolerance || '',
+            interaction_style: profData.interaction_style || '',
+          });
         }
         // Fetch Roadmap
         const rmRes = await fetch(`${baseUrl}/roadmap`, { headers: { Authorization: `Bearer ${token}` } });
@@ -69,19 +92,35 @@ function Roadmap() {
 
   // Save edited profile inputs
   const handleSaveProfile = async () => {
-    setProfile(editForm); // Optimistic UI update
+    setProfile(careerProfile); // Optimistic UI update
     setIsEditing(false);
     try {
       await fetch(`${baseUrl}/students/profile`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify(careerProfile)
       });
       // Automatically generate a new roadmap based on updated answers
       await handleUpdateRoadmap();
     } catch (e) {
       console.error('Failed to save profile:', e);
     }
+  };
+
+  const handleCancelEdit = () => {
+    // Reset careerProfile to original profile data
+    setCareerProfile({
+      interests: Array.isArray(profile?.interests) ? profile.interests : (profile?.interests ? [profile.interests] : []),
+      strengths: Array.isArray(profile?.strengths) ? profile.strengths : (profile?.strengths ? [profile.strengths] : []),
+      industry_stream: profile?.industry_stream || profile?.preferred_stream || '',
+      education_level: profile?.education_level || '',
+      budget: profile?.budget || profile?.budget_range || '',
+      location: profile?.location || profile?.location_preference || '',
+      work_life_balance: profile?.work_life_balance || '',
+      risk_tolerance: profile?.risk_tolerance || '',
+      interaction_style: profile?.interaction_style || '',
+    });
+    setIsEditing(false);
   };
 
   // Request new AI Roadmap generation
@@ -91,7 +130,7 @@ function Roadmap() {
       const res = await fetch(`${baseUrl}/roadmap/generate`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ career_inputs: editForm })
+        body: JSON.stringify({ career_inputs: careerProfile })
       });
       if (res.ok) {
         const newRoadmap = await res.json();

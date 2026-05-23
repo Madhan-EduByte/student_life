@@ -15,20 +15,13 @@ function Login() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
-  const [loginMode, setLoginMode] = useState('email'); // 'email' or 'phone'
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (loginMode === 'email') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!email) newErrors.email = 'Email is required';
-      else if (!emailRegex.test(email)) newErrors.email = 'Invalid email format';
-    } else {
-      if (!email) newErrors.email = 'Phone number is required';
-      else if (!/^\d{10}$/.test(email.replace(/\D/g, ''))) 
-        newErrors.email = 'Phone number must be 10 digits';
-    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) newErrors.email = 'Email is required';
+    else if (!emailRegex.test(email)) newErrors.email = 'Invalid email format';
 
     if (!password) newErrors.password = 'Password is required';
     else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
@@ -129,58 +122,25 @@ function Login() {
           className="glass-card p-8 md:p-10 mb-8"
           variants={itemVariants}
         >
-          {/* Mode Selector */}
-          <motion.div className="flex gap-3 mb-8" variants={itemVariants}>
-            <button
-              onClick={() => {
-                setLoginMode('email');
-                setErrors({});
-              }}
-              className={`flex-1 py-3 rounded-lg font-medium transition-all duration-200 ${
-                loginMode === 'email'
-                  ? 'bg-primary-600 text-white shadow-glow border border-primary-500'
-                  : 'bg-white/5 text-surface-300 hover:bg-white/10 border border-white/10'
-              }`}
-            >
-              <HiMail className="inline mr-2" />
-              Email
-            </button>
-            <button
-              onClick={() => {
-                setLoginMode('phone');
-                setErrors({});
-              }}
-              className={`flex-1 py-3 rounded-lg font-medium transition-all duration-200 ${
-                loginMode === 'phone'
-                  ? 'bg-primary-600 text-white shadow-glow border border-primary-500'
-                  : 'bg-white/5 text-surface-300 hover:bg-white/10 border border-white/10'
-              }`}
-            >
-              📱 Phone
-            </button>
-          </motion.div>
+
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email/Phone Input */}
+            {/* Email Input */}
             <motion.div variants={itemVariants}>
               <label className="block text-sm font-medium text-surface-300 mb-2">
-                {loginMode === 'email' ? 'Email Address' : 'Phone Number'}
+                Email Address
               </label>
               <div className="relative">
                 <HiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500" size={20} />
                 <input
-                  type={loginMode === 'email' ? 'email' : 'tel'}
+                  type="email"
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
                     setErrors({ ...errors, email: '' });
                   }}
-                  placeholder={
-                    loginMode === 'email'
-                      ? 'you@example.com'
-                      : '9876543210'
-                  }
+                  placeholder="you@example.com"
                   className={`w-full pl-12 pr-4 py-3 rounded-lg bg-white/5 border transition-all duration-200 text-white placeholder-surface-500 focus:outline-none ${
                     errors.email
                       ? 'border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500/20'

@@ -1,13 +1,11 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { HiLightningBolt, HiAcademicCap, HiMap, HiEye, HiChartBar, HiUserGroup } from 'react-icons/hi';
+import { HiAcademicCap, HiMap, HiEye } from 'react-icons/hi';
 import useAuthStore from '../store/authStore';
 
 const features = [
-  { icon: <HiLightningBolt size={24} />, title: '6-Question AI Engine', desc: 'Answer just 6 smart questions and get a comprehensive career roadmap powered by advanced AI.', color: '#6366f1' },
   { icon: <HiMap size={24} />, title: 'Living Career Roadmap', desc: 'Your roadmap evolves every 6 months, adapting to industry trends and your progress.', color: '#d946ef' },
   { icon: <HiAcademicCap size={24} />, title: 'College DNA Matching', desc: 'Match with 15,000+ colleges worldwide based on your profile, budget, and goals.', color: '#22c55e' },
-  { icon: <HiChartBar size={24} />, title: 'Future-Proof Score', desc: 'Know the automation risk and 20-year salary projection for any career path.', color: '#f59e0b' },
   { icon: <HiEye size={24} />, title: 'Career Simulation', desc: 'Shadow any profession through AI-powered career simulations before choosing.', color: '#ec4899' },
 ];
 
@@ -63,7 +61,7 @@ function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-xl text-surface-400 max-w-3xl mx-auto mb-10 leading-relaxed"
           >
-            Answer 6 questions. Get a precise, living career roadmap — matched colleges,
+            Answer a few questions. Get a precise, living career roadmap — matched colleges,
             courses, career paths, and weekly milestones — updated for life.
           </motion.p>
 
@@ -181,7 +179,7 @@ function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { step: '01', title: 'Answer 6 Questions', desc: 'Tell us about your interests, strengths, stream preference, education, budget, and location.', icon: '🎯' },
+              { step: '01', title: 'Answer Few Questions', desc: 'Tell us about your interests, strengths, stream preference, education, budget, and location.', icon: '🎯' },
               { step: '02', title: 'AI Generates Your Roadmap', desc: 'Our AI engine analyzes your inputs against 2,000+ careers and 15,000+ colleges.', icon: '🤖' },
               { step: '03', title: 'Follow Your Living Path', desc: 'Get weekly milestones, matched colleges, and career insights that update every 6 months.', icon: '🚀' },
             ].map((item, index) => (
@@ -203,18 +201,7 @@ function Home() {
             ))}
           </div>
 
-          {/* CTA */}
-          <div className="text-center mt-16">
-            {!isAuthenticated ? (
-              <Link to="/signup" className="btn-primary text-lg px-10 py-4" id="how-it-works-cta">
-                Begin Your Assessment →
-              </Link>
-            ) : (
-              <Link to="/dashboard" className="btn-primary text-lg px-10 py-4" id="how-it-works-cta">
-                View Your Dashboard →
-              </Link>
-            )}
-          </div>
+
         </div>
       </section>
     </div>

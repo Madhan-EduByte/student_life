@@ -2,15 +2,33 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiEye, HiPlay, HiClock, HiCurrencyRupee } from 'react-icons/hi';
 import Button from '../components/common/Button';
+import Modal from '../components/common/Modal';
+import CareerProfileForm from '../components/common/CareerProfileForm';
 import CareerCard from '../components/career/CareerCard';
+import useAuthStore from '../store/authStore';
 
 function Simulation() {
+  const { isAuthenticated } = useAuthStore();
   const [selectedCareer, setSelectedCareer] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulation, setSimulation] = useState(null);
   const [careers, setCareers] = useState([]);
+  const [filteredCareers, setFilteredCareers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(!isAuthenticated);
+  const [profileAnswered, setProfileAnswered] = useState(isAuthenticated);
+  const [careerProfile, setCareerProfile] = useState({
+    interests: [],
+    strengths: [],
+    industry_stream: '',
+    education_level: '',
+    budget: '',
+    location: '',
+    work_life_balance: '',
+    risk_tolerance: '',
+    interaction_style: '',
+  });
 
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -22,7 +40,9 @@ function Simulation() {
         const response = await fetch(`${baseUrl}/careers`);
         if (response.ok) {
           const data = await response.json();
-          setCareers(data.careers || data);
+          const careersData = data.careers || data;
+          setCareers(careersData);
+          setFilteredCareers(careersData);
           setError(null);
         } else {
           setError('Failed to load careers from the server.');
@@ -37,6 +57,54 @@ function Simulation() {
 
     fetchCareers();
   }, [baseUrl]);
+
+  const handleCareerProfileChange = (field, value) => {
+    setCareerProfile((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const validateProfile = () => {
+    if (!careerProfile.interests || careerProfile.interests.length === 0) {
+      alert('Please select at least one interest area');
+      return false;
+    }
+    if (!careerProfile.strengths || careerProfile.strengths.length === 0) {
+      alert('Please select at least one strength');
+      return false;
+    }
+    if (!careerProfile.industry_stream) {
+      alert('Please select an industry/stream');
+      return false;
+    }
+    if (!careerProfile.education_level) {
+      alert('Please select an education level');
+      return false;
+    }
+    if (!careerProfile.budget) {
+      alert('Please select a budget range');
+      return false;
+    }
+    if (!careerProfile.location) {
+      alert('Please select a location preference');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSaveProfile = () => {
+    if (!validateProfile()) return;
+    
+    // Filter careers based on profile (optional: can be enhanced)
+    setProfileAnswered(true);
+    setShowProfileModal(false);
+  };
+
+  const handleSkipProfile = () => {
+    setProfileAnswered(true);
+    setShowProfileModal(false);
+  };
 
   // Fetch specific career simulation from API
   const handleSimulate = async (career) => {
@@ -112,18 +180,24 @@ function Simulation() {
                 </div>
               )}
 
-              {!loading && !error && (
+              {!loading && !error && profileAnswered && (
                 <>
                   <p className="text-sm text-surface-400 mb-6">Select a career to simulate:</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {careers.map((career, i) => (
-                      <CareerCard
-                        key={career.id}
-                        career={career}
-                        onClick={handleSimulate}
-                        index={i}
-                      />
-                    ))}
+                    {filteredCareers.length > 0 ? (
+                      filteredCareers.map((career, i) => (
+                        <CareerCard
+                          key={career.id}
+                          career={career}
+                          onClick={handleSimulate}
+                          index={i}
+                        />
+                      ))
+                    ) : (
+                      <div className="col-span-full text-center py-8 text-surface-400">
+                        <p>No careers found. Try adjusting your preferences.</p>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -239,6 +313,34 @@ function Simulation() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Career Profile Modal for Non-Authenticated Users */}
+      <Modal
+        isOpen={showProfileModal}
+        onClose={handleSkipProfile}
+        title="Your Career Profile (AI Inputs)"
+        size="xl"
+      >
+        <CareerProfileForm formData={careerProfile} onChange={handleCareerProfileChange} showOptional={false} />
+
+        {/* Modal Actions */}
+        <div className="mt-6 flex gap-3">
+          <Button
+            variant="secondary"
+            className="flex-1"
+            onClick={handleSkipProfile}
+          >
+            Skip for Now
+          </Button>
+          <Button
+            variant="primary"
+            className="flex-1"
+            onClick={handleSaveProfile}
+          >
+            Get Started
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
