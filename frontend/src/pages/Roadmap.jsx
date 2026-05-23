@@ -33,6 +33,18 @@ const demoRoadmap = {
   })),
 };
 
+const demoProfile = {
+  interests: ['Technology', 'Problem Solving', 'Coding'],
+  strengths: ['Analytical Thinking', 'Mathematics', 'Logic'],
+  industry_stream: 'science',
+  education_level: 'Bachelors',
+  budget: '10-20L',
+  location: 'Bangalore, India',
+  work_life_balance: 'balanced',
+  risk_tolerance: 'medium',
+  interaction_style: 'introvert',
+};
+
 function Roadmap() {
   const token = useAuthStore(state => state.accessToken || state.access_token);
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -56,16 +68,26 @@ function Roadmap() {
   // Fetch Profile & Roadmap on load
   useEffect(() => {
     const fetchData = async () => {
-      if (!token) return;
+      if (!token) {
+        setProfile(demoProfile);
+        setCareerProfile(demoProfile);
+        setRoadmap(demoRoadmap);
+        return;
+      }
       try {
         // Fetch Profile
         const profRes = await fetch(`${baseUrl}/students/profile`, { headers: { Authorization: `Bearer ${token}` } });
         if (profRes.ok) {
           const profData = await profRes.json();
           setProfile(profData);
+          const actualProfile = profData.profile || profData.data || profData;
+          setProfile(actualProfile);
           // Map profile data to careerProfile state
           setCareerProfile({
-            interests: Array.isArray(profData.interests) ? profData.interests : (profData.interests ? [profData.interests] : []),
+            interests: Array.isArray(profData.interests) ? profData.interests : 
+                       (Array.isArray(profData.interest_areas) ? profData.interest_areas : 
+                       (profData.interests ? [profData.interests] : 
+                       (profData.interest_areas ? [profData.interest_areas] : []))),
             strengths: Array.isArray(profData.strengths) ? profData.strengths : (profData.strengths ? [profData.strengths] : []),
             industry_stream: profData.industry_stream || profData.preferred_stream || '',
             education_level: profData.education_level || '',
@@ -74,6 +96,18 @@ function Roadmap() {
             work_life_balance: profData.work_life_balance || '',
             risk_tolerance: profData.risk_tolerance || '',
             interaction_style: profData.interaction_style || '',
+            interests: Array.isArray(actualProfile.interest_areas) ? actualProfile.interest_areas : 
+                       (actualProfile.interest_areas ? [actualProfile.interest_areas] : 
+                       (Array.isArray(actualProfile.interests) ? actualProfile.interests : 
+                       (actualProfile.interests ? [actualProfile.interests] : []))),
+            strengths: Array.isArray(actualProfile.strengths) ? actualProfile.strengths : (actualProfile.strengths ? [actualProfile.strengths] : []),
+            industry_stream: actualProfile.preferred_stream || actualProfile.industry_stream || '',
+            education_level: actualProfile.education_level || '',
+            budget: actualProfile.budget_range || actualProfile.budget || '',
+            location: actualProfile.location_preference || actualProfile.location || '',
+            work_life_balance: actualProfile.work_life_balance || '',
+            risk_tolerance: actualProfile.risk_tolerance || '',
+            interaction_style: actualProfile.interaction_style || '',
           });
         }
         // Fetch Roadmap
@@ -110,12 +144,22 @@ function Roadmap() {
   const handleCancelEdit = () => {
     // Reset careerProfile to original profile data
     setCareerProfile({
-      interests: Array.isArray(profile?.interests) ? profile.interests : (profile?.interests ? [profile.interests] : []),
+      interests: Array.isArray(profile?.interests) ? profile.interests : 
+                 (Array.isArray(profile?.interest_areas) ? profile.interest_areas : 
+                 (profile?.interests ? [profile.interests] : 
+                 (profile?.interest_areas ? [profile.interest_areas] : []))),
+      interests: Array.isArray(profile?.interest_areas) ? profile.interest_areas : 
+                 (profile?.interest_areas ? [profile.interest_areas] : 
+                 (Array.isArray(profile?.interests) ? profile.interests : 
+                 (profile?.interests ? [profile.interests] : []))),
       strengths: Array.isArray(profile?.strengths) ? profile.strengths : (profile?.strengths ? [profile.strengths] : []),
       industry_stream: profile?.industry_stream || profile?.preferred_stream || '',
+      industry_stream: profile?.preferred_stream || profile?.industry_stream || '',
       education_level: profile?.education_level || '',
       budget: profile?.budget || profile?.budget_range || '',
       location: profile?.location || profile?.location_preference || '',
+      budget: profile?.budget_range || profile?.budget || '',
+      location: profile?.location_preference || profile?.location || '',
       work_life_balance: profile?.work_life_balance || '',
       risk_tolerance: profile?.risk_tolerance || '',
       interaction_style: profile?.interaction_style || '',
@@ -126,11 +170,24 @@ function Roadmap() {
   // Request new AI Roadmap generation
   const handleUpdateRoadmap = async () => {
     setGenerating(true);
+    
+    const payload = {
+      interest_areas: careerProfile.interests,
+      strengths: careerProfile.strengths,
+      preferred_stream: careerProfile.industry_stream,
+      education_level: careerProfile.education_level,
+      budget_range: careerProfile.budget,
+      location_preference: careerProfile.location,
+      work_life_balance: careerProfile.work_life_balance,
+      risk_tolerance: careerProfile.risk_tolerance,
+      interaction_style: careerProfile.interaction_style,
+    };
+
     try {
       const res = await fetch(`${baseUrl}/roadmap/generate`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ career_inputs: careerProfile })
+        body: JSON.stringify({ career_inputs: payload })
       });
       if (res.ok) {
         const newRoadmap = await res.json();
@@ -185,20 +242,42 @@ function Roadmap() {
                 <HiPencil /> Edit Answers
               </button>
             ) : (
-              <button onClick={handleSaveProfile} className="text-green-400 hover:text-green-300 flex items-center gap-1 text-sm">
-                <HiCheck /> Save Answers
-              </button>
+              <div className="flex items-center gap-3">
+                <button onClick={handleCancelEdit} className="text-surface-400 hover:text-white flex items-center gap-1 text-sm">
+                  <HiX /> Cancel
+                </button>
+                <button onClick={handleSaveProfile} className="text-green-400 hover:text-green-300 flex items-center gap-1 text-sm">
+                  <HiCheck /> Save Answers
+                </button>
+              </div>
             )}
           </div>
+          
+          <p className="text-sm text-surface-400 mb-4">
+            <span className="text-red-500">*</span> indicates a mandatory field
+          </p>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-             {['interest_areas', 'strengths', 'preferred_stream', 'education_level', 'budget_range', 'location_preference'].map(field => (
-                <div key={field} className="bg-surface-800/50 p-3 rounded-lg border border-white/5">
-                   <p className="text-xs text-surface-400 capitalize mb-1">{field.replace('_', ' ')}</p>
+             {[
+               { key: 'interests', label: 'Interest Areas', isMandatory: true },
+               { key: 'strengths', label: 'Strengths', isMandatory: true },
+               { key: 'industry_stream', label: 'Preferred Stream', isMandatory: true },
+               { key: 'education_level', label: 'Education Level', isMandatory: true },
+               { key: 'budget', label: 'Budget Range', isMandatory: true },
+               { key: 'location', label: 'Location Preference', isMandatory: true },
+               { key: 'work_life_balance', label: 'Work-Life Balance', isMandatory: false },
+               { key: 'risk_tolerance', label: 'Risk Tolerance', isMandatory: false },
+               { key: 'interaction_style', label: 'Interaction Style', isMandatory: false }
+             ].map(({ key, label, isMandatory }) => (
+                <div key={key} className="bg-surface-800/50 p-3 rounded-lg border border-white/5">
+                   <p className="text-xs text-surface-400 capitalize mb-1">
+                     {label} {isMandatory && <span className="text-red-500">*</span>}
+                   </p>
                    {isEditing ? (
-                     field === 'preferred_stream' ? (
+                     key === 'industry_stream' ? (
                        <select
-                         value={editForm?.[field] || ''}
-                         onChange={e => setEditForm({...editForm, [field]: e.target.value})}
+                         value={careerProfile[key] || ''}
+                         onChange={e => setCareerProfile({...careerProfile, [key]: e.target.value})}
                          className="w-full bg-surface-900 border border-surface-700 rounded px-2 py-1 text-sm text-white focus:border-primary-500 outline-none"
                        >
                          <option value="">Select Stream</option>
@@ -208,11 +287,17 @@ function Roadmap() {
                          <option value="vocational">Vocational</option>
                        </select>
                      ) : (
-                       <input type="text" value={editForm?.[field] || ''} onChange={e => setEditForm({...editForm, [field]: e.target.value})}
+                       <input type="text" 
+                         value={Array.isArray(careerProfile[key]) ? careerProfile[key].join(', ') : (careerProfile[key] || '')} 
+                         onChange={e => setCareerProfile({...careerProfile, [key]: key === 'interests' || key === 'strengths' ? e.target.value.split(',').map(s => s.trim()) : e.target.value})}
                          className="w-full bg-surface-900 border border-surface-700 rounded px-2 py-1 text-sm text-white focus:border-primary-500 outline-none" />
                      )
                    ) : (
-                     <p className="text-sm text-white font-medium">{profile?.[field] || 'Not specified'}</p>
+                     <p className="text-sm text-white font-medium">
+                       {Array.isArray(careerProfile[key]) 
+                         ? (careerProfile[key].length > 0 ? careerProfile[key].join(', ') : 'Not specified') 
+                         : (careerProfile[key] || 'Not specified')}
+                     </p>
                    )}
                 </div>
              ))}
@@ -238,8 +323,9 @@ function Roadmap() {
             <p className="text-sm text-surface-400 mb-1">AI Confidence</p>
             <p className="text-lg font-display font-bold gradient-text">{roadmap.confidence_score}%</p>
           </div>
-          <div className="glass-card p-5 flex justify-center">
-            <FutureProofScore score={roadmap.future_proof_score} size="sm" />
+          <div className="glass-card p-5 text-center">
+            <p className="text-sm text-surface-400 mb-1">Est. Duration</p>
+            <p className="text-lg font-display font-bold text-white">12 Weeks</p>
           </div>
         </motion.div>
 
@@ -250,9 +336,33 @@ function Roadmap() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="lg:col-span-2"
+            className="lg:col-span-2 flex flex-col gap-6"
           >
             <MilestoneTracker milestones={roadmap.milestones} />
+
+            {/* Next Steps Panel (Below Milestones) */}
+            <div className="glass-card p-6">
+              <h3 className="font-display font-bold text-white mb-4 flex items-center gap-2">
+                <HiSparkles className="text-primary-400" /> Next Steps
+              </h3>
+              <p className="text-surface-400 text-sm mb-6">
+                Ready to take the next step? Explore colleges that match your profile or experience a day in the life of this profession.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Link
+                  to="/colleges"
+                  className="block p-4 rounded-xl bg-primary-600/10 border border-primary-500/20 text-sm text-primary-300 hover:bg-primary-600/20 transition-all text-center font-medium"
+                >
+                  View Matched Colleges →
+                </Link>
+                <Link
+                  to="/simulation"
+                  className="block p-4 rounded-xl bg-accent-600/10 border border-accent-500/20 text-sm text-accent-300 hover:bg-accent-600/20 transition-all text-center font-medium"
+                >
+                  Simulate This Career →
+                </Link>
+              </div>
+            </div>
           </motion.div>
 
           {/* Sidebar */}
@@ -285,23 +395,23 @@ function Roadmap() {
               </div>
             </div>
 
-            {/* Quick Actions */}
+            {/* Career Insights */}
             <div className="glass-card p-6">
               <h3 className="font-display font-bold text-white mb-4 flex items-center gap-2">
-                <HiAcademicCap className="text-primary-400" /> Quick Actions
+                <HiAcademicCap className="text-primary-400" /> Career Insights
               </h3>
               <div className="space-y-2">
                 <Link
-                  to="/colleges"
-                  className="block p-3 rounded-xl bg-primary-600/10 border border-primary-500/20 text-sm text-primary-300 hover:bg-primary-600/20 transition-all text-center"
+                  to="/blog"
+                  className="block p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary-500/20 transition-all text-center text-sm text-surface-300 hover:text-white"
                 >
-                  View Matched Colleges →
+                  Read Career Advice →
                 </Link>
                 <Link
-                  to="/simulation"
-                  className="block p-3 rounded-xl bg-accent-600/10 border border-accent-500/20 text-sm text-accent-300 hover:bg-accent-600/20 transition-all text-center"
+                  to="/faq"
+                  className="block p-3 rounded-xl bg-white/5 border border-white/5 hover:border-primary-500/20 transition-all text-center text-sm text-surface-300 hover:text-white"
                 >
-                  Simulate This Career →
+                  View FAQs →
                 </Link>
               </div>
             </div>

@@ -7,6 +7,8 @@ import Input from '../components/common/Input';
 import Modal from '../components/common/Modal';
 import CareerProfileForm from '../components/common/CareerProfileForm';
 import authService from '../services/authService';
+import useAuth from '../hooks/useAuth';
+import useAuthStore from '../store/authStore';
 
 function getSignUpErrorMessage(err) {
   const detail = err?.response?.data?.detail;
@@ -33,6 +35,7 @@ function getSignUpErrorMessage(err) {
 
 function SignUp() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [currentStep, setCurrentStep] = useState(1); // Step 1: Account Creation, Step 2: Career Profile
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -155,8 +158,18 @@ function SignUp() {
         role: 'student',
       });
 
+      // Login to authenticate and get the token
+      const loginResult = await login(formData.email, formData.password);
+      if (!loginResult.success) {
+        throw new Error(loginResult.error || 'Failed to auto-login after registration');
+      }
+
       // Save career profile
-      const token = localStorage.getItem('access_token');
+      let token = localStorage.getItem('access_token');
+      if (!token) {
+        const authState = useAuthStore.getState();
+        token = authState.accessToken || authState.access_token;
+      }
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
       
       await fetch(`${baseUrl}/students/profile`, {
@@ -251,12 +264,16 @@ function SignUp() {
               </motion.div>
             )}
 
+            <p className="text-sm text-surface-400 mb-4">
+              <span className="text-red-500">*</span> indicates a mandatory field
+            </p>
+
             {/* Form */}
             <form onSubmit={handleNextStep} className="space-y-4">
               {/* Full Name */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Full Name
+                  Full Name <span className="text-red-500">*</span>
                 </label>
                 <Input
                   type="text"
@@ -272,7 +289,7 @@ function SignUp() {
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Email
+                  Email <span className="text-red-500">*</span>
                 </label>
                 <Input
                   type="email"
@@ -304,7 +321,7 @@ function SignUp() {
               {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Password
+                  Password <span className="text-red-500">*</span>
                 </label>
                 <Input
                   type="password"
@@ -320,7 +337,7 @@ function SignUp() {
               {/* Confirm Password */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Confirm Password
+                  Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <Input
                   type="password"

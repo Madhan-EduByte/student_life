@@ -321,7 +321,7 @@ function Simulation() {
         title="Your Career Profile (AI Inputs)"
         size="xl"
       >
-        <CareerProfileForm formData={careerProfile} onChange={handleCareerProfileChange} showOptional={false} />
+        <CareerProfileForm formData={careerProfile} onChange={handleCareerProfileChange} showOptional={true} />
 
         {/* Modal Actions */}
         <div className="mt-6 flex gap-3">

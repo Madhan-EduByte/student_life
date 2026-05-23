@@ -241,7 +241,7 @@ function Login() {
           {/* Forgot Password */}
           <motion.div className="text-center mt-6" variants={itemVariants}>
             <Link
-              to="#"
+              to="/forgot-password"
               className="text-sm text-primary-400 hover:text-primary-300 transition-colors"
             >
               Forgot password?
