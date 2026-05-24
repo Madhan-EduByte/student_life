@@ -72,10 +72,10 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         db.add(profile)
         db.flush()
 
-        # Auto-generate initial career roadmap inside the registration transaction if inputs are provided
+        # Auto-generate initial career career_guide inside the registration transaction if inputs are provided
         if user_data.interest_areas:
             try:
-                from app.services.roadmap_service import roadmap_service
+                from app.services.career_guide_service import career_guide_service
                 career_inputs = {
                     "interest_areas": user_data.interest_areas,
                     "strengths": user_data.strengths,
@@ -87,10 +87,10 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
                     "risk_tolerance": user_data.risk_tolerance,
                     "interaction_style": user_data.interaction_style,
                 }
-                await roadmap_service.generate_roadmap(db, user.id, career_inputs)
+                await career_guide_service.generate_career_guide(db, user.id, career_inputs)
             except Exception as rm_err:
                 import logging
-                logging.getLogger(__name__).error(f"Failed to auto-generate roadmap on register: {rm_err}")
+                logging.getLogger(__name__).error(f"Failed to auto-generate career_guide on register: {rm_err}")
 
     db.commit()
     db.refresh(user)

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
-const useRoadmapStore = create((set) => ({
-  activeRoadmap: null,
+const useCareerGuideStore = create((set) => ({
+  activeCareerGuide: null,
   milestones: [],
   careerInputs: {
     interest_areas: '',
@@ -13,7 +13,7 @@ const useRoadmapStore = create((set) => ({
   },
   isGenerating: false,
 
-  setActiveRoadmap: (roadmap) => set({ activeRoadmap: roadmap }),
+  setActiveCareerGuide: (careerGuide) => set({ activeCareerGuide: careerGuide }),
 
   setMilestones: (milestones) => set({ milestones }),
 
@@ -44,4 +44,4 @@ const useRoadmapStore = create((set) => ({
     })),
 }));
 
-export default useRoadmapStore;
+export default useCareerGuideStore;

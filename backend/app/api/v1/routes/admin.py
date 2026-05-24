@@ -13,7 +13,7 @@ from app.models.user import User
 from app.models.student import StudentProfile
 from app.models.career import Career
 from app.models.college import College
-from app.models.roadmap import Roadmap, Milestone, RoadmapHistory, SessionLog, StudentOutcome
+from app.models.career_guide import CareerGuide, Milestone, CareerGuideHistory, SessionLog, StudentOutcome
 from app.core.security import hash_password
 from app.schemas.auth import MessageResponse
 
@@ -57,12 +57,12 @@ async def get_dashboard_stats(
 ) -> Any:
     """Get high-level statistics for the Global Command Center."""
     total_students = db.query(User).filter(User.role == "student").count()
-    active_roadmaps = db.query(Roadmap).filter(Roadmap.is_active == True).count()
+    active_career_guides = db.query(CareerGuide).filter(CareerGuide.is_active == True).count()
     total_careers = db.query(Career).count()
     total_colleges = db.query(College).count()
     return {
         "total_students": total_students,
-        "active_roadmaps": active_roadmaps,
+        "active_career_guides": active_career_guides,
         "total_careers": total_careers,
         "total_colleges": total_colleges,
         "system_health": "operational"
@@ -217,13 +217,13 @@ async def list_colleges(
         "website": col.website
     } for col in colleges]
 
-@router.get("/roadmaps")
-async def list_roadmaps(
+@router.get("/career-guides")
+async def list_career_guides(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_admin_user)
 ) -> Any:
-    """List all generated roadmaps."""
-    roadmaps = db.query(Roadmap).all()
+    """List all generated career_guides."""
+    career_guides = db.query(CareerGuide).all()
     return [{
         "id": rm.id,
         "user_id": rm.user_id,
@@ -235,18 +235,18 @@ async def list_roadmaps(
         "version": rm.version,
         "is_active": rm.is_active,
         "created_at": rm.created_at
-    } for rm in roadmaps]
+    } for rm in career_guides]
 
 @router.get("/milestones")
 async def list_milestones(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_admin_user)
 ) -> Any:
-    """List all roadmap milestones."""
+    """List all career_guide milestones."""
     milestones = db.query(Milestone).all()
     return [{
         "id": m.id,
-        "roadmap_id": m.roadmap_id,
+        "career_guide_id": m.career_guide_id,
         "week_number": m.week_number,
         "title": m.title,
         "category": m.category,
@@ -255,16 +255,16 @@ async def list_milestones(
         "due_date": m.due_date
     } for m in milestones]
 
-@router.get("/roadmap-histories")
-async def list_roadmap_histories(
+@router.get("/career-guide-histories")
+async def list_career_guide_histories(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_admin_user)
 ) -> Any:
-    """List all active roadmap version histories."""
-    histories = db.query(RoadmapHistory).all()
+    """List all active career_guide version histories."""
+    histories = db.query(CareerGuideHistory).all()
     return [{
         "id": h.id,
-        "roadmap_id": h.roadmap_id,
+        "career_guide_id": h.career_guide_id,
         "version": h.version,
         "changes_summary": h.changes_summary,
         "reason": h.reason,

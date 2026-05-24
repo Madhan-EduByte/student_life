@@ -22,7 +22,7 @@ INSERT IGNORE INTO users (
 ('student2@example.com', '$argon2id$v=19$m=65536,t=3,p=4$3xuDEOK8F8K4V2othTBmzA$xGK4tsMmyxSmWpQZUu7RAsJZEEb4Ehbd0/ifMGaM9co', 'Alice Johnson', '9876543214', 'student', TRUE, TRUE, 'en', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('student3@example.com', '$argon2id$v=19$m=65536,t=3,p=4$3xuDEOK8F8K4V2othTBmzA$xGK4tsMmyxSmWpQZUu7RAsJZEEb4Ehbd0/ifMGaM9co', 'Bob Wilson', '9876543215', 'student', TRUE, TRUE, 'en', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
--- Seed initial AI inputs for all demo students so Roadmap has data to display
+-- Seed initial AI inputs for all demo students so CareerGuide has data to display
 INSERT IGNORE INTO student_profiles (
   user_id,
   interest_areas,
@@ -41,14 +41,14 @@ INSERT IGNORE INTO student_profiles (
 ((SELECT id FROM users WHERE email='student2@example.com'), 'enterprising, organizational', 'communication, interpersonal', 'business', 'bachelor', 'high', 'major_hub', 'hustle', 'high', 'collaborative', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ((SELECT id FROM users WHERE email='student3@example.com'), 'creative, social', 'creative_spatial, interpersonal', 'creative_arts', 'bachelor', 'medium', 'remote', 'flexible', 'moderate', 'balanced', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
--- Seed active AI roadmaps for the demo students so their dashboards look complete immediately
-INSERT IGNORE INTO roadmaps (id, user_id, title, summary, career_path, recommended_stream, confidence_score, future_proof_score, ai_model_used, version, is_active, created_at, updated_at) VALUES 
-(1, (SELECT id FROM users WHERE email='student@example.com'), 'Your Path to Becoming a Software Engineer', 'Based on your interests in technology and problem-solving strengths, we recommend pursuing a career as a Software Engineer. This roadmap will guide you through the next 12 weeks.', 'Software Engineer', 'technology', 85, 78, 'gemini', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- Seed active AI career_guides for the demo students so their dashboards look complete immediately
+INSERT IGNORE INTO career_guides (id, user_id, title, summary, career_path, recommended_stream, confidence_score, future_proof_score, ai_model_used, version, is_active, created_at, updated_at) VALUES 
+(1, (SELECT id FROM users WHERE email='student@example.com'), 'Your Path to Becoming a Software Engineer', 'Based on your interests in technology and problem-solving strengths, we recommend pursuing a career as a Software Engineer. This career_guide will guide you through the next 12 weeks.', 'Software Engineer', 'technology', 85, 78, 'gemini', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (2, (SELECT id FROM users WHERE email='student2@example.com'), 'Your Path to Becoming a Product Manager', 'Based on your leadership strengths and business interests, Product Management is highly recommended.', 'Product Manager', 'business', 90, 85, 'gemini', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (3, (SELECT id FROM users WHERE email='student3@example.com'), 'Your Path to Becoming a UX Designer', 'Your empathy and creativity align perfectly with UX Design.', 'UX Designer', 'creative_arts', 88, 80, 'gemini', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
--- Seed realistic milestones for John Doe's Software Engineering roadmap
-INSERT IGNORE INTO milestones (roadmap_id, week_number, title, description, category, priority, estimated_hours, is_completed) VALUES
+-- Seed realistic milestones for John Doe's Software Engineering career_guide
+INSERT IGNORE INTO milestones (career_guide_id, week_number, title, description, category, priority, estimated_hours, is_completed) VALUES
 (1, 1, 'Week 1: Foundation — Learn HTML/CSS', 'Focus on mastering basic web layout and styling.', 'learning', 'high', 10, 1),
 (1, 2, 'Week 2: Foundation — JavaScript Basics', 'Learn variables, loops, functions, and DOM manipulation.', 'learning', 'high', 12, 1),
 (1, 3, 'Week 3: Foundation — Git & GitHub', 'Understand version control and collaborate on code.', 'learning', 'high', 8, 1),
@@ -63,11 +63,11 @@ INSERT IGNORE INTO milestones (roadmap_id, week_number, title, description, cate
 (1, 12, 'Week 12: Advanced — Portfolio & Resume', 'Finalize your portfolio and prepare for interviews.', 'networking', 'high', 10, 0);
 
 -- Seed milestones for Alice Johnson (Product Manager)
-INSERT IGNORE INTO milestones (roadmap_id, week_number, title, description, category, priority, estimated_hours, is_completed) VALUES
+INSERT IGNORE INTO milestones (career_guide_id, week_number, title, description, category, priority, estimated_hours, is_completed) VALUES
 (2, 1, 'Week 1: Intro to Product Management', 'Learn the product lifecycle and agile methodologies.', 'learning', 'high', 10, 1),
 (2, 2, 'Week 2: Market Research', 'Conduct user interviews and competitor analysis.', 'learning', 'high', 12, 0);
 
 -- Seed milestones for Bob Wilson (UX Designer)
-INSERT IGNORE INTO milestones (roadmap_id, week_number, title, description, category, priority, estimated_hours, is_completed) VALUES
+INSERT IGNORE INTO milestones (career_guide_id, week_number, title, description, category, priority, estimated_hours, is_completed) VALUES
 (3, 1, 'Week 1: Design Thinking Principles', 'Understand empathy maps and user personas.', 'learning', 'high', 10, 1),
 (3, 2, 'Week 2: Wireframing & Prototyping', 'Master Figma and create your first wireframes.', 'project', 'high', 15, 0);

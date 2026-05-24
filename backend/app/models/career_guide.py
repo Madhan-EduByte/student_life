@@ -1,6 +1,6 @@
 """
-DestinAI — Roadmap Model
-AI-generated career roadmaps with milestones and version history.
+DestinAI — CareerGuide Model
+AI-generated career career_guides with milestones and version history.
 """
 
 from datetime import datetime
@@ -21,10 +21,10 @@ from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 
-class Roadmap(Base):
-    """AI-generated career roadmap for a student."""
+class CareerGuide(Base):
+    """AI-generated career career_guide for a student."""
 
-    __tablename__ = "roadmaps"
+    __tablename__ = "career_guides"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -46,25 +46,25 @@ class Roadmap(Base):
     )
 
     # Relationships
-    user = relationship("User", back_populates="roadmaps")
+    user = relationship("User", back_populates="career_guides")
     milestones = relationship(
-        "Milestone", back_populates="roadmap", cascade="all, delete"
+        "Milestone", back_populates="career_guide", cascade="all, delete"
     )
     history = relationship(
-        "RoadmapHistory", back_populates="roadmap", cascade="all, delete"
+        "CareerGuideHistory", back_populates="career_guide", cascade="all, delete"
     )
 
     def __repr__(self):
-        return f"<Roadmap(id={self.id}, user_id={self.user_id}, career='{self.career_path}')>"
+        return f"<CareerGuide(id={self.id}, user_id={self.user_id}, career='{self.career_path}')>"
 
 
 class Milestone(Base):
-    """Weekly milestone tasks within a roadmap."""
+    """Weekly milestone tasks within a career_guide."""
 
     __tablename__ = "milestones"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    roadmap_id = Column(Integer, ForeignKey("roadmaps.id"), nullable=False)
+    career_guide_id = Column(Integer, ForeignKey("career_guides.id"), nullable=False)
     week_number = Column(Integer, nullable=False)
     title = Column(String(500), nullable=False)
     description = Column(Text, nullable=True)
@@ -86,19 +86,19 @@ class Milestone(Base):
     )
 
     # Relationships
-    roadmap = relationship("Roadmap", back_populates="milestones")
+    career_guide = relationship("CareerGuide", back_populates="milestones")
 
     def __repr__(self):
         return f"<Milestone(id={self.id}, week={self.week_number}, title='{self.title}')>"
 
 
-class RoadmapHistory(Base):
-    """Version history for living roadmap updates."""
+class CareerGuideHistory(Base):
+    """Version history for living career_guide updates."""
 
-    __tablename__ = "roadmap_history"
+    __tablename__ = "career_guide_history"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    roadmap_id = Column(Integer, ForeignKey("roadmaps.id"), nullable=False)
+    career_guide_id = Column(Integer, ForeignKey("career_guides.id"), nullable=False)
     version = Column(Integer, nullable=False)
     changes_summary = Column(Text, nullable=True)
     previous_data = Column(Text, nullable=True)  # JSON snapshot
@@ -108,10 +108,10 @@ class RoadmapHistory(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    roadmap = relationship("Roadmap", back_populates="history")
+    career_guide = relationship("CareerGuide", back_populates="history")
 
     def __repr__(self):
-        return f"<RoadmapHistory(roadmap_id={self.roadmap_id}, version={self.version})>"
+        return f"<CareerGuideHistory(career_guide_id={self.career_guide_id}, version={self.version})>"
 
 
 class StudentOutcome(Base):
@@ -121,7 +121,7 @@ class StudentOutcome(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    roadmap_id = Column(Integer, ForeignKey("roadmaps.id"), nullable=True)
+    career_guide_id = Column(Integer, ForeignKey("career_guides.id"), nullable=True)
     outcome_type = Column(String(50), nullable=True)  # enrolled, employed, switched
     college_enrolled = Column(String(500), nullable=True)
     course_enrolled = Column(String(500), nullable=True)

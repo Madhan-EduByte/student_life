@@ -29,7 +29,7 @@ const DashboardOverview = () => {
   // Dashboard Stats
   const [stats, setStats] = useState({
     total_students: 0,
-    active_roadmaps: 0,
+    active_careerGuides: 0,
     total_careers: 0,
     total_colleges: 0,
     system_health: 'checking...'
@@ -40,10 +40,10 @@ const DashboardOverview = () => {
   const [studentProfiles, setStudentProfiles] = useState([]);
   const [careers, setCareers] = useState([]);
   const [colleges, setColleges] = useState([]);
-  const [roadmaps, setRoadmaps] = useState([]);
+  const [careerGuides, setCareerGuides] = useState([]);
   const [milestones, setMilestones] = useState([]);
   const [sessionLogs, setSessionLogs] = useState([]);
-  const [roadmapHistories, setRoadmapHistories] = useState([]);
+  const [careerGuideHistories, setCareerGuideHistories] = useState([]);
   const [studentOutcomes, setStudentOutcomes] = useState([]);
 
   // Modals and Forms
@@ -85,9 +85,9 @@ const DashboardOverview = () => {
       const collegesRes = await api.get('/admin/colleges');
       setColleges(collegesRes.data);
 
-      // 6. Roadmaps
-      const roadmapsRes = await api.get('/admin/roadmaps');
-      setRoadmaps(roadmapsRes.data);
+      // 6. CareerGuides
+      const careerGuidesRes = await api.get('/admin/career-guides');
+      setCareerGuides(careerGuidesRes.data);
 
       // 7. Milestones
       const milestonesRes = await api.get('/admin/milestones');
@@ -98,8 +98,8 @@ const DashboardOverview = () => {
       setSessionLogs(logsRes.data);
 
       // 9. Histories
-      const histRes = await api.get('/admin/roadmap-histories');
-      setRoadmapHistories(histRes.data);
+      const histRes = await api.get('/admin/career-guide-histories');
+      setCareerGuideHistories(histRes.data);
 
       // 10. Outcomes
       const outRes = await api.get('/admin/student-outcomes');
@@ -213,7 +213,7 @@ const DashboardOverview = () => {
     col.location?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredRoadmaps = roadmaps.filter(rm =>
+  const filteredCareerGuides = careerGuides.filter(rm =>
     rm.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     rm.career_path?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -274,7 +274,7 @@ const DashboardOverview = () => {
               { id: 'students', label: 'Student Profiles', icon: <HiAcademicCap /> },
               { id: 'careers', label: 'Careers Catalog', icon: <HiBookOpen /> },
               { id: 'colleges', label: 'Colleges Simulate', icon: <HiOfficeBuilding /> },
-              { id: 'roadmaps', label: 'AI Career Guides', icon: <HiSparkles /> },
+              { id: 'careerGuides', label: 'AI Career Guides', icon: <HiSparkles /> },
               { id: 'milestones', label: 'Milestones List', icon: <HiClipboardList /> },
               { id: 'logs', label: 'Activity Logs & History', icon: <HiTerminal /> }
             ].map((tab) => (
@@ -340,7 +340,7 @@ const DashboardOverview = () => {
                           <HiSparkles size={20} />
                         </div>
                         <p className="text-xs text-surface-400 mb-1">Active Career Guides</p>
-                        <p className="text-3xl font-display font-bold text-white">{stats.active_roadmaps}</p>
+                        <p className="text-3xl font-display font-bold text-white">{stats.active_careerGuides}</p>
                       </div>
 
                       <div className="glass-card p-5 text-center">
@@ -395,7 +395,7 @@ const DashboardOverview = () => {
 
                         <div className="w-full flex items-center justify-between gap-4 max-w-md mb-2">
                           <span className="text-xs text-surface-400">Active Career Guides Generated</span>
-                          <span className="text-xs font-semibold text-white">{stats.active_roadmaps > 0 ? 'Active' : '0%'}</span>
+                          <span className="text-xs font-semibold text-white">{stats.active_careerGuides > 0 ? 'Active' : '0%'}</span>
                         </div>
                         <div className="w-full h-8 bg-pink-600/30 border border-pink-500/30 rounded-lg max-w-md flex items-center justify-center text-xs font-bold" style={{ width: '60%' }}>
                           AI Path Generation Complete
@@ -578,8 +578,8 @@ const DashboardOverview = () => {
                   </div>
                 )}
 
-                {/* 6. ROADMAPS TAB */}
-                {activeTab === 'roadmaps' && (
+                {/* 6. CAREER_GUIDES TAB */}
+                {activeTab === 'careerGuides' && (
                   <div className="glass-card overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm text-surface-400">
@@ -594,7 +594,7 @@ const DashboardOverview = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                          {filteredRoadmaps.map((rm) => (
+                          {filteredCareerGuides.map((rm) => (
                             <tr key={rm.id} className="hover:bg-white/5 transition-colors">
                               <td className="px-6 py-4 font-mono text-xs">{rm.id}</td>
                               <td className="px-6 py-4">
@@ -632,7 +632,7 @@ const DashboardOverview = () => {
                         <thead className="bg-white/5 text-white font-semibold border-b border-white/10 uppercase tracking-wider text-xs">
                           <tr>
                             <th className="px-6 py-4">ID</th>
-                            <th className="px-6 py-4">Roadmap ID</th>
+                            <th className="px-6 py-4">CareerGuide ID</th>
                             <th className="px-6 py-4">Title</th>
                             <th className="px-6 py-4">Priority / Category</th>
                             <th className="px-6 py-4">Status</th>
@@ -642,7 +642,7 @@ const DashboardOverview = () => {
                           {filteredMilestones.map((m) => (
                             <tr key={m.id} className="hover:bg-white/5 transition-colors">
                               <td className="px-6 py-4 font-mono text-xs">{m.id}</td>
-                              <td className="px-6 py-4 text-xs font-mono">Roadmap #{m.roadmap_id}</td>
+                              <td className="px-6 py-4 text-xs font-mono">CareerGuide #{m.careerGuide_id}</td>
                               <td className="px-6 py-4">
                                 <div className="font-semibold text-white">{m.title}</div>
                                 <div className="text-xs text-surface-500">Week {m.week_number}</div>
@@ -701,17 +701,17 @@ const DashboardOverview = () => {
                       </div>
                     </div>
 
-                    {/* Roadmap Generation History */}
+                    {/* CareerGuide Generation History */}
                     <div className="glass-card p-6">
                       <h3 className="font-display font-bold text-lg text-white mb-4 flex items-center gap-2">
-                        <HiSparkles className="text-pink-400" /> Roadmap Version Revision History
+                        <HiSparkles className="text-pink-400" /> CareerGuide Version Revision History
                       </h3>
                       <div className="overflow-x-auto max-h-60 overflow-y-auto">
                         <table className="w-full text-left text-sm text-surface-400">
                           <thead className="bg-white/5 text-white font-semibold border-b border-white/10 uppercase tracking-wider text-xs">
                             <tr>
                               <th className="px-6 py-3">ID</th>
-                              <th className="px-6 py-3">Roadmap ID</th>
+                              <th className="px-6 py-3">CareerGuide ID</th>
                               <th className="px-6 py-3">Version</th>
                               <th className="px-6 py-3">Summary of Changes</th>
                               <th className="px-6 py-3">Reason</th>
@@ -719,10 +719,10 @@ const DashboardOverview = () => {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-white/5 text-xs">
-                            {roadmapHistories.map((h) => (
+                            {careerGuideHistories.map((h) => (
                               <tr key={h.id} className="hover:bg-white/5">
                                 <td className="px-6 py-3 font-mono">{h.id}</td>
-                                <td className="px-6 py-3 font-mono">Roadmap #{h.roadmap_id}</td>
+                                <td className="px-6 py-3 font-mono">CareerGuide #{h.careerGuide_id}</td>
                                 <td className="px-6 py-3 text-white font-semibold">v{h.version}</td>
                                 <td className="px-6 py-3 text-surface-300">{h.changes_summary}</td>
                                 <td className="px-6 py-3 text-surface-400 italic">"{h.reason}"</td>

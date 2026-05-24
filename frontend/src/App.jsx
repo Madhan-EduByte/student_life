@@ -6,7 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import ForgotPassword from './pages/ForgotPassword';
-import Roadmap from './pages/Roadmap';
+import CareerGuide from './pages/CareerGuide';
 import CollegeMatch from './pages/CollegeMatch';
 import Simulation from './pages/Simulation';
 import Dashboard from './pages/Dashboard';
@@ -26,7 +26,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/careerGuide" element={<Roadmap />} />
+            <Route path="/careerGuide" element={<CareerGuide />} />
             <Route path="/collegesSimulate" element={<CollegeMatch />} />
             <Route path="/careerSimulate" element={<Simulation />} />
             <Route path="/dashboard" element={<Dashboard />} />

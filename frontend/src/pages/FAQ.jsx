@@ -5,10 +5,10 @@ import { HiChevronDown } from 'react-icons/hi';
 const faqs = [
   {
     question: "What is DestinAI?",
-    answer: "DestinAI is an intelligent career guidance platform that builds personalized, living career roadmaps based on 6 simple questions about your interests, strengths, and goals. It acts as your personalized career compass."
+    answer: "DestinAI is an intelligent career guidance platform that builds personalized, living career careerGuides based on 6 simple questions about your interests, strengths, and goals. It acts as your personalized career compass."
   },
   {
-    question: "How does the AI Roadmap work?",
+    question: "How does the AI CareerGuide work?",
     answer: "Our engine analyzes your inputs against 2,000+ careers and 15,000+ colleges using advanced AI models. It then generates a personalized 12-week milestone plan to help you achieve your targeted career path."
   },
   {
@@ -17,7 +17,7 @@ const faqs = [
   },
   {
     question: "Can I change my answers later?",
-    answer: "Absolutely! Your roadmap is a 'living' document. You can update your AI Profile inputs from the Roadmap page at any time, and our AI will instantly regenerate and pivot your path."
+    answer: "Absolutely! Your careerGuide is a 'living' document. You can update your AI Profile inputs from the CareerGuide page at any time, and our AI will instantly regenerate and pivot your path."
   },
   {
     question: "What is Career Simulation?",

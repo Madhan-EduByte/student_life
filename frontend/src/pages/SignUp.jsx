@@ -171,13 +171,13 @@ function SignUp() {
         interaction_style: careerProfile.interaction_style || '',
       });
 
-      // Login to authenticate and get the token (which will auto-navigate to /roadmap)
+      // Login to authenticate and get the token (which will auto-navigate to /career-guide)
       const loginResult = await login(formData.email, formData.password);
       if (!loginResult.success) {
         throw new Error(loginResult.error || 'Failed to auto-login after registration');
       }
 
-      setSuccess('✅ Account created and career roadmap generated!');
+      setSuccess('✅ Account created and career careerGuide generated!');
       setFormData({
         full_name: '',
         email: '',

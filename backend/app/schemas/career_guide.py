@@ -1,6 +1,6 @@
 """
-DestinAI — Roadmap Schemas
-Pydantic schemas for roadmap and milestone endpoints.
+DestinAI — CareerGuide Schemas
+Pydantic schemas for career_guide and milestone endpoints.
 """
 
 from datetime import datetime
@@ -11,8 +11,8 @@ from pydantic import BaseModel, field_validator
 from app.schemas.student import StudentProfileCreate
 
 
-class RoadmapGenerate(BaseModel):
-    """Request to generate an AI roadmap from 6 inputs."""
+class CareerGuideGenerate(BaseModel):
+    """Request to generate an AI career_guide from 6 inputs."""
 
     career_inputs: StudentProfileCreate
 
@@ -37,8 +37,8 @@ class MilestoneResponse(BaseModel):
         from_attributes = True
 
 
-class RoadmapResponse(BaseModel):
-    """Roadmap response schema."""
+class CareerGuideResponse(BaseModel):
+    """CareerGuide response schema."""
 
     id: int
     user_id: int
@@ -67,10 +67,10 @@ class RoadmapResponse(BaseModel):
         from_attributes = True
 
 
-class RoadmapListResponse(BaseModel):
-    """List of roadmaps for a user."""
+class CareerGuideListResponse(BaseModel):
+    """List of career_guides for a user."""
 
-    roadmaps: List[RoadmapResponse]
+    career_guides: List[CareerGuideResponse]
     total: int
 
 
@@ -80,8 +80,8 @@ class MilestoneUpdate(BaseModel):
     is_completed: bool
 
 
-class RoadmapHistoryResponse(BaseModel):
-    """Roadmap version history."""
+class CareerGuideHistoryResponse(BaseModel):
+    """CareerGuide version history."""
 
     id: int
     version: int

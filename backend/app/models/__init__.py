@@ -5,10 +5,10 @@ Exports all SQLAlchemy models for Alembic and application use.
 
 from app.models.career import Career, CareerScore, Stream
 from app.models.college import College, CollegeCourse, CollegeScore
-from app.models.roadmap import (
+from app.models.career_guide import (
     Milestone,
-    Roadmap,
-    RoadmapHistory,
+    CareerGuide,
+    CareerGuideHistory,
     SessionLog,
     StudentOutcome,
 )
@@ -24,9 +24,9 @@ __all__ = [
     "College",
     "CollegeCourse",
     "CollegeScore",
-    "Roadmap",
+    "CareerGuide",
     "Milestone",
-    "RoadmapHistory",
+    "CareerGuideHistory",
     "StudentOutcome",
     "SessionLog",
 ]

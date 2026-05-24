@@ -1,7 +1,7 @@
 """
 DestinAI — AI Service
 Integration with Google Gemini (primary) and OpenAI GPT-4 (fallback).
-Handles career roadmap generation, career simulation, and college matching.
+Handles career career_guide generation, career simulation, and college matching.
 """
 
 import json
@@ -21,8 +21,8 @@ class AIService:
         self.fallback_model = settings.AI_FALLBACK_MODEL
 
     def _build_career_prompt(self, inputs: Dict[str, str]) -> str:
-        """Build a structured prompt for career roadmap generation."""
-        return f"""You are DestinAI, an expert AI career counselor. Based on the following inputs from a student, generate a comprehensive, personalized career roadmap.
+        """Build a structured prompt for career career_guide generation."""
+        return f"""You are DestinAI, an expert AI career counselor. Based on the following inputs from a student, generate a comprehensive, personalized career career_guide.
 
 ## Student Inputs:
 1. **Interest Areas:** {inputs.get('interest_areas', 'Not specified')}
@@ -38,8 +38,8 @@ class AIService:
 ## Generate the following in JSON format:
 {{
     "career_path": "Primary recommended career path",
-    "title": "Personalized roadmap title",
-    "summary": "2-3 sentence summary of the roadmap",
+    "title": "Personalized career_guide title",
+    "summary": "2-3 sentence summary of the career_guide",
     "recommended_stream": "science|commerce|arts|vocational",
     "confidence_score": 0-100,
     "future_proof_score": 0-100,
@@ -63,7 +63,7 @@ class AIService:
     }}
 }}
 
-Generate exactly 12 milestones (covering 12 weeks / 3 months as an initial roadmap).
+Generate exactly 12 milestones (covering 12 weeks / 3 months as an initial career_guide).
 Be specific, actionable, and realistic. Consider Indian education system and job market.
 Respond ONLY with valid JSON, no markdown formatting."""
 
@@ -185,7 +185,7 @@ Respond ONLY with valid JSON."""
             "title": f"Your Path to Becoming a {career}",
             "summary": f"Based on your interests in {interest} and strengths, "
             f"we recommend pursuing a career as a {career}. "
-            f"This roadmap will guide you through the next 12 weeks.",
+            f"This career_guide will guide you through the next 12 weeks.",
             "recommended_stream": stream,
             "confidence_score": 85.0,
             "future_proof_score": 78.0,
@@ -217,8 +217,8 @@ Respond ONLY with valid JSON."""
             },
         }
 
-    async def generate_roadmap(self, inputs: Dict[str, str]) -> Dict[str, Any]:
-        """Generate a career roadmap. Tries primary model, then fallback, then mock."""
+    async def generate_career_guide(self, inputs: Dict[str, str]) -> Dict[str, Any]:
+        """Generate a career career_guide. Tries primary model, then fallback, then mock."""
         prompt = self._build_career_prompt(inputs)
 
         # Try primary model

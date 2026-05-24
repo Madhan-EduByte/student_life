@@ -4,7 +4,7 @@ import { HiAcademicCap, HiMap, HiEye } from 'react-icons/hi';
 import useAuthStore from '../store/authStore';
 
 const features = [
-  { icon: <HiMap size={24} />, title: 'Living Career Roadmap', desc: 'Your roadmap evolves every 6 months, adapting to industry trends and your progress.', color: '#d946ef' },
+  { icon: <HiMap size={24} />, title: 'Living Career CareerGuide', desc: 'Your careerGuide evolves every 6 months, adapting to industry trends and your progress.', color: '#d946ef' },
   { icon: <HiAcademicCap size={24} />, title: 'College DNA Matching', desc: 'Match with 15,000+ colleges worldwide based on your profile, budget, and goals.', color: '#22c55e' },
   { icon: <HiEye size={24} />, title: 'Career Simulation', desc: 'Shadow any profession through AI-powered career simulations before choosing.', color: '#ec4899' },
 ];
@@ -61,7 +61,7 @@ function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-xl text-surface-400 max-w-3xl mx-auto mb-10 leading-relaxed"
           >
-            Answer a few questions. Get a precise, living career roadmap — matched colleges,
+            Answer a few questions. Get a precise, living career careerGuide — matched colleges,
             courses, career paths, and weekly milestones — updated for life.
           </motion.p>
 
@@ -180,7 +180,7 @@ function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { step: '01', title: 'Answer Few Questions', desc: 'Tell us about your interests, strengths, stream preference, education, budget, and location.', icon: '🎯' },
-              { step: '02', title: 'AI Generates Your Roadmap', desc: 'Our AI engine analyzes your inputs against 2,000+ careers and 15,000+ colleges.', icon: '🤖' },
+              { step: '02', title: 'AI Generates Your CareerGuide', desc: 'Our AI engine analyzes your inputs against 2,000+ careers and 15,000+ colleges.', icon: '🤖' },
               { step: '03', title: 'Follow Your Living Path', desc: 'Get weekly milestones, matched colleges, and career insights that update every 6 months.', icon: '🚀' },
             ].map((item, index) => (
               <motion.div

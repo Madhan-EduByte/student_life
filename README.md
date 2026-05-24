@@ -2,7 +2,7 @@
 
 > **"Your destiny, powered by AI."**
 > An intelligent career guidance platform that takes 6 smart inputs from any student
-> and delivers a precise, living career roadmap — matched colleges, courses, career paths,
+> and delivers a precise, living career career_guide — matched colleges, courses, career paths,
 > and weekly milestones — updated for life.
 
 ---
@@ -47,7 +47,7 @@ https://dashboard.aishe.gov.in/hedirectory/#/hedirectory/standaloneDetails/S/3
 
 ### Core Features
 - 6-question AI career guidance engine
-- Dynamic living career roadmap (auto-updated every 6 months)
+- Dynamic living career career_guide (auto-updated every 6 months)
 - College DNA matching (15,000+ global colleges)
 - Future-proof career score (AI automation risk + 20-year salary projection)
 - AI career simulation — shadow any profession before choosing
@@ -84,7 +84,7 @@ https://dashboard.aishe.gov.in/hedirectory/#/hedirectory/standaloneDetails/S/3
 ### AI Engine
 | Technology | Purpose |
 |---|---|
-| Google Gemini API | Roadmap generation |
+| Google Gemini API | CareerGuide generation |
 | OpenAI GPT-4 API | Fallback model |
 
 ---
@@ -349,7 +349,7 @@ Gemini API called (or OpenAI fallback)
         ↓
 Response parsed
         ↓
-Roadmap stored in database
+CareerGuide stored in database
         ↓
 Milestones generated
         ↓
@@ -357,7 +357,7 @@ College matches ranked
         ↓
 Future-proof score calculated
         ↓
-Full roadmap returned
+Full career_guide returned
 ```
 
 ---
@@ -520,8 +520,8 @@ Once backend is running:
 ```
 POST   /api/v1/auth/register          Register
 POST   /api/v1/auth/login             Login
-POST   /api/v1/roadmap/generate       Generate roadmap
-GET    /api/v1/roadmap/{id}           Get roadmap
+POST   /api/v1/career-guide/generate       Generate career_guide
+GET    /api/v1/career-guide/{id}           Get career_guide
 GET    /api/v1/colleges/match         Match colleges
 GET    /api/v1/students/profile       Get profile
 ```
