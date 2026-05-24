@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { HiLocationMarker, HiAcademicCap, HiStar, HiCurrencyRupee } from 'react-icons/hi';
 
-function CollegeCard({ college, matchScore, matchReasons, onClick, index = 0 }) {
+function CollegeCard({ college, matchScore, matchReasons, onClick, index = 0, aiPredictOrder }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -12,8 +12,15 @@ function CollegeCard({ college, matchScore, matchReasons, onClick, index = 0 }) 
       id={`college-card-${college.id || index}`}
     >
       {/* Match Score Badge */}
-      {matchScore && (
-        <div className="flex justify-end mb-3">
+      <div className="flex justify-between items-center mb-3">
+        {aiPredictOrder ? (
+          <div className="px-3 py-1 rounded-full text-xs font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30">
+            AI Predict #{aiPredictOrder}
+          </div>
+        ) : (
+          <div />
+        )}
+        {matchScore && (
           <div className="px-3 py-1 rounded-full text-xs font-bold"
             style={{
               background: matchScore >= 80 ? 'rgba(34,197,94,0.15)' : matchScore >= 60 ? 'rgba(99,102,241,0.15)' : 'rgba(245,158,11,0.15)',
@@ -22,8 +29,8 @@ function CollegeCard({ college, matchScore, matchReasons, onClick, index = 0 }) 
             }}>
             {matchScore.toFixed(0)}% Match
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* College Info */}
       <div className="flex items-start gap-4 mb-4">

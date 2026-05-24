@@ -1,12 +1,12 @@
 """
 DestinAI — AI Service
-Integration with Google Gemini (primary) and OpenAI GPT-4 (fallback).
-Handles career career_guide generation, career simulation, and college matching.
+Integration with Google Gemini, OpenAI, Meta (Llama), Perplexity, Grok, and DeepSeek.
+Handles career guide generation, career simulation, college matching, and career ranking.
 """
 
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from app.core.config import settings
 
@@ -14,15 +14,34 @@ logger = logging.getLogger(__name__)
 
 
 class AIService:
-    """AI service for career guidance using Gemini/OpenAI."""
+    """AI service for career guidance using multiple LLM providers."""
 
     def __init__(self):
         self.primary_model = settings.AI_PRIMARY_MODEL
         self.fallback_model = settings.AI_FALLBACK_MODEL
 
+    def is_api_configured(self, provider: Optional[str] = None) -> bool:
+        """Check if the selected AI provider's API key is configured and valid."""
+        prov = (provider or self.primary_model).lower()
+        key = ""
+        if prov == "gemini":
+            key = settings.GEMINI_API_KEY
+        elif prov == "openai":
+            key = settings.OPENAI_API_KEY
+        elif prov == "meta":
+            key = settings.META_API_KEY
+        elif prov == "perplexity":
+            key = settings.PERPLEXITY_API_KEY
+        elif prov == "grok":
+            key = settings.GROK_API_KEY
+        elif prov == "deepseek":
+            key = settings.DEEPSEEK_API_KEY
+
+        return bool(key) and "your-key" not in key.lower() and "your-api" not in key.lower() and key.strip() != ""
+
     def _build_career_prompt(self, inputs: Dict[str, str]) -> str:
-        """Build a structured prompt for career career_guide generation."""
-        return f"""You are DestinAI, an expert AI career counselor. Based on the following inputs from a student, generate a comprehensive, personalized career career_guide.
+        """Build a structured prompt for career guide generation."""
+        return f"""You are DestinAI, an expert AI career counselor. Based on the following inputs from a student, generate a comprehensive, personalized career guide.
 
 ## Student Inputs:
 1. **Interest Areas:** {inputs.get('interest_areas', 'Not specified')}
@@ -38,11 +57,11 @@ class AIService:
 ## Generate the following in JSON format:
 {{
     "career_path": "Primary recommended career path",
-    "title": "Personalized career_guide title",
-    "summary": "2-3 sentence summary of the career_guide",
+    "title": "Personalized career guide title",
+    "summary": "2-3 sentence summary of the career guide",
     "recommended_stream": "science|commerce|arts|vocational",
-    "confidence_score": 0-100,
-    "future_proof_score": 0-100,
+    "confidence_score": 85,
+    "future_proof_score": 80,
     "alternative_careers": ["career1", "career2", "career3"],
     "milestones": [
         {{
@@ -52,7 +71,7 @@ class AIService:
             "category": "learning|project|networking|skill|exam_prep",
             "priority": "high|medium|low",
             "estimated_hours": 5,
-            "resources": ["resource1_url", "resource2_url"]
+            "resources": ["https://www.coursera.org", "https://www.udemy.com"]
         }}
     ],
     "college_criteria": {{
@@ -63,13 +82,11 @@ class AIService:
     }}
 }}
 
-Generate exactly 12 milestones (covering 12 weeks / 3 months as an initial career_guide).
+Generate exactly 12 milestones (covering 12 weeks / 3 months as an initial career guide).
 Be specific, actionable, and realistic. Consider Indian education system and job market.
 Respond ONLY with valid JSON, no markdown formatting."""
 
-    def _build_simulation_prompt(
-        self, career_title: str, duration: str = "1_day"
-    ) -> str:
+    def _build_simulation_prompt(self, career_title: str, duration: str = "1_day") -> str:
         """Build a prompt for career simulation."""
         duration_text = {
             "1_day": "a typical day",
@@ -91,38 +108,56 @@ Respond in JSON format:
 
 Respond ONLY with valid JSON."""
 
+    def _parse_json_response(self, text: str) -> Optional[Dict[str, Any]]:
+        """Clean and parse raw JSON text returned from LLMs."""
+        try:
+            text = text.strip()
+            if text.startswith("```json"):
+                text = text[7:]
+            elif text.startswith("```"):
+                text = text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
+            
+            cleaned = text.strip()
+            # Clean up trailing comma within lists/dicts if any
+            return json.loads(cleaned)
+        except Exception as e:
+            logger.error(f"Failed to parse JSON response: {e}. Raw text was: {text[:200]}...")
+            return None
+
     async def generate_with_gemini(self, prompt: str) -> Optional[Dict[str, Any]]:
         """Generate response using Google Gemini API."""
         try:
             import google.generativeai as genai
 
             genai.configure(api_key=settings.GEMINI_API_KEY)
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model_name = settings.AI_MODEL_NAME if settings.AI_MODEL_NAME else "gemini-1.5-flash"
+            model = genai.GenerativeModel(model_name)
             response = model.generate_content(prompt)
-
-            # Parse JSON from response
-            text = response.text.strip()
-            if text.startswith("```json"):
-                text = text[7:]
-            if text.startswith("```"):
-                text = text[3:]
-            if text.endswith("```"):
-                text = text[:-3]
-
-            return json.loads(text.strip())
+            return self._parse_json_response(response.text)
 
         except Exception as e:
             logger.error(f"Gemini API error: {e}")
             return None
 
-    async def generate_with_openai(self, prompt: str) -> Optional[Dict[str, Any]]:
-        """Generate response using OpenAI GPT-4 API."""
+    async def generate_with_openai_compatible(
+        self, prompt: str, base_url: str, api_key: str, default_model: str
+    ) -> Optional[Dict[str, Any]]:
+        """Generic handler for OpenAI-compatible providers (OpenAI, Meta, Perplexity, Grok, DeepSeek)."""
         try:
             from openai import OpenAI
 
-            client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            model_name = settings.AI_MODEL_NAME if settings.AI_MODEL_NAME else default_model
+            
+            # Setup OpenAI client parameters
+            client_args = {"api_key": api_key}
+            if base_url:
+                client_args["base_url"] = base_url
+
+            client = OpenAI(**client_args)
             response = client.chat.completions.create(
-                model="gpt-4",
+                model=model_name,
                 messages=[
                     {
                         "role": "system",
@@ -135,22 +170,59 @@ Respond ONLY with valid JSON."""
             )
 
             text = response.choices[0].message.content.strip()
-            if text.startswith("```json"):
-                text = text[7:]
-            if text.startswith("```"):
-                text = text[3:]
-            if text.endswith("```"):
-                text = text[:-3]
-
-            return json.loads(text.strip())
+            return self._parse_json_response(text)
 
         except Exception as e:
-            logger.error(f"OpenAI API error: {e}")
+            logger.error(f"OpenAI-compatible API error on {base_url or 'default'}: {e}")
             return None
 
-    async def generate_mock_response(
-        self, inputs: Dict[str, str]
-    ) -> Dict[str, Any]:
+    async def generate_with_selected_provider(self, prompt: str) -> Optional[Dict[str, Any]]:
+        """Generates response using the EXACT provider selected in settings.AI_PRIMARY_MODEL."""
+        provider = self.primary_model.lower()
+        
+        if not self.is_api_configured(provider):
+            logger.warning(f"AI Provider '{provider}' API Key is not configured. Falling back to mock data.")
+            return None
+
+        if provider == "gemini":
+            return await self.generate_with_gemini(prompt)
+        elif provider == "openai":
+            return await self.generate_with_openai_compatible(
+                prompt, base_url="", api_key=settings.OPENAI_API_KEY, default_model="gpt-4o"
+            )
+        elif provider == "meta":
+            return await self.generate_with_openai_compatible(
+                prompt,
+                base_url="https://api.together.xyz/v1",
+                api_key=settings.META_API_KEY,
+                default_model="meta-llama/Llama-3-8b-chat-hf"
+            )
+        elif provider == "perplexity":
+            return await self.generate_with_openai_compatible(
+                prompt,
+                base_url="https://api.perplexity.ai",
+                api_key=settings.PERPLEXITY_API_KEY,
+                default_model="sonar-reasoning"
+            )
+        elif provider == "grok":
+            return await self.generate_with_openai_compatible(
+                prompt,
+                base_url="https://api.x.ai/v1",
+                api_key=settings.GROK_API_KEY,
+                default_model="grok-beta"
+            )
+        elif provider == "deepseek":
+            return await self.generate_with_openai_compatible(
+                prompt,
+                base_url="https://api.deepseek.com/v1",
+                api_key=settings.DEEPSEEK_API_KEY,
+                default_model="deepseek-chat"
+            )
+        else:
+            logger.error(f"Unknown AI provider configured: {provider}")
+            return None
+
+    async def generate_mock_response(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Generate a mock response when no API keys are configured."""
         stream = inputs.get("preferred_stream", "science")
         interest = inputs.get("interest_areas", "technology")
@@ -185,7 +257,7 @@ Respond ONLY with valid JSON."""
             "title": f"Your Path to Becoming a {career}",
             "summary": f"Based on your interests in {interest} and strengths, "
             f"we recommend pursuing a career as a {career}. "
-            f"This career_guide will guide you through the next 12 weeks.",
+            f"This career guide will guide you through the next 12 weeks.",
             "recommended_stream": stream,
             "confidence_score": 85.0,
             "future_proof_score": 78.0,
@@ -218,61 +290,26 @@ Respond ONLY with valid JSON."""
         }
 
     async def generate_career_guide(self, inputs: Dict[str, str]) -> Dict[str, Any]:
-        """Generate a career career_guide. Tries primary model, then fallback, then mock."""
-        prompt = self._build_career_prompt(inputs)
-
-        # Try primary model
-        if self.primary_model == "gemini" and settings.GEMINI_API_KEY:
-            result = await self.generate_with_gemini(prompt)
-            if result:
-                result["_ai_model_used"] = "gemini"
-                return result
-
-        if self.primary_model == "openai" and settings.OPENAI_API_KEY:
-            result = await self.generate_with_openai(prompt)
-            if result:
-                result["_ai_model_used"] = "openai"
-                return result
-
-        # Try fallback model
-        if self.fallback_model == "openai" and settings.OPENAI_API_KEY:
-            result = await self.generate_with_openai(prompt)
-            if result:
-                result["_ai_model_used"] = "openai"
-                return result
-
-        if self.fallback_model == "gemini" and settings.GEMINI_API_KEY:
-            result = await self.generate_with_gemini(prompt)
-            if result:
-                result["_ai_model_used"] = "gemini"
-                return result
+        """Generate a career guide. Tries configured selected provider, otherwise falls back to mock."""
+        result = await self.generate_with_selected_provider(self._build_career_prompt(inputs))
+        if result:
+            result["_ai_model_used"] = self.primary_model
+            return result
 
         # Fallback to mock response
-        logger.warning("No AI API keys configured. Using mock response.")
+        logger.warning("AI Generation failed or not configured. Using mock response.")
         result = await self.generate_mock_response(inputs)
         result["_ai_model_used"] = "mock"
         return result
 
-    async def simulate_career(
-        self, career_title: str, duration: str = "1_day"
-    ) -> Dict[str, Any]:
+    async def simulate_career(self, career_title: str, duration: str = "1_day") -> Dict[str, Any]:
         """Simulate a career experience."""
         prompt = self._build_simulation_prompt(career_title, duration)
-
-        # Try primary model
-        if settings.GEMINI_API_KEY:
-            result = await self.generate_with_gemini(prompt)
-            if result:
-                result["ai_model_used"] = "gemini"
-                result["career_title"] = career_title
-                return result
-
-        if settings.OPENAI_API_KEY:
-            result = await self.generate_with_openai(prompt)
-            if result:
-                result["ai_model_used"] = "openai"
-                result["career_title"] = career_title
-                return result
+        result = await self.generate_with_selected_provider(prompt)
+        if result:
+            result["ai_model_used"] = self.primary_model
+            result["career_title"] = career_title
+            return result
 
         # Mock simulation
         return {
@@ -302,6 +339,84 @@ Respond ONLY with valid JSON."""
             "typical_salary": 800000,
             "ai_model_used": "mock",
         }
+
+    async def predict_college_matches(self, colleges: List[Dict[str, Any]], criteria: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
+        """Use the selected LLM to rank and score colleges based on criteria."""
+        college_list_str = "\n".join([
+            f"- ID: {c['id']}, Name: {c['name']}, University: {c.get('university') or 'N/A'}, NIRF Rank: {c.get('nirf_rank') or 'N/A'}, Placement Rate: {c.get('placement_rate') or 'N/A'}%, Average Package: {c.get('average_package') or 'N/A'} LPA, Fees Max: {c.get('fee_range_max') or 'N/A'}, City: {c.get('city') or 'N/A'}, State: {c.get('state') or 'N/A'}, Type: {c.get('type') or 'N/A'}"
+            for c in colleges
+        ])
+        
+        prompt = f"""You are DestinAI, an expert AI education counselor. Rank the following colleges based on the student's criteria.
+
+## Student Criteria:
+- Preferred Stream: {criteria.get('preferred_stream') or 'N/A'}
+- Location Preference: {criteria.get('location') or 'N/A'}
+- Budget Range: {criteria.get('budget_range') or 'N/A'}
+
+## Available Colleges:
+{college_list_str}
+
+## Instructions:
+1. Rank the top 10 matching colleges from the list.
+2. For each ranked college, calculate a match_score (0-100) based on NIRF rank, location fit, budget fit, placements, and stream.
+3. Provide 2-3 specific match_reasons for why this college is recommended.
+4. Respond ONLY with valid JSON in this exact structure (no markdown formatting, no extra text):
+[
+    {{
+        "college_id": 1,
+        "match_score": 95,
+        "match_reasons": ["Located in your preferred city", "NIRF Rank #10", "Affordable fees within budget"]
+    }}
+]
+
+Respond ONLY with valid JSON."""
+
+        result = await self.generate_with_selected_provider(prompt)
+        if isinstance(result, list):
+            return result
+        elif isinstance(result, dict) and "matches" in result:
+            return result["matches"]
+        return None
+
+    async def predict_career_matches(self, careers: List[Dict[str, Any]], criteria: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
+        """Use the selected LLM to rank and score careers based on criteria."""
+        career_list_str = "\n".join([
+            f"- ID: {c['id']}, Title: {c['title']}, Stream: {c.get('stream') or 'N/A'}, Category: {c.get('category') or 'N/A'}, Demand: {c.get('demand_level') or 'N/A'}, Entry Salary: {c.get('average_salary_entry') or 'N/A'}, Growth Rate: {c.get('growth_rate') or 0}%"
+            for c in careers
+        ])
+        
+        prompt = f"""You are DestinAI, an expert AI career counselor. Rank the following careers based on the student's interests and profile.
+
+## Student Profile:
+- Interests: {criteria.get('interests') or 'N/A'}
+- Strengths: {criteria.get('strengths') or 'N/A'}
+- Preferred Stream: {criteria.get('preferred_stream') or 'N/A'}
+
+## Available Careers:
+{career_list_str}
+
+## Instructions:
+1. Rank the top 10 matching careers from the list.
+2. For each ranked career, calculate a match_score (0-100) based on how well it fits their interests, strengths, and stream.
+3. Provide 2-3 specific match_reasons for why this career is a good fit.
+4. Respond ONLY with valid JSON in this exact structure (no markdown formatting, no extra text):
+[
+    {{
+        "career_id": 1,
+        "match_score": 95,
+        "match_reasons": ["Matches your interest in technology", "Leverages your problem-solving strengths", "High growth rate and demand"]
+    }}
+]
+
+Respond ONLY with valid JSON."""
+
+        result = await self.generate_with_selected_provider(prompt)
+        if isinstance(result, list):
+            return result
+        elif isinstance(result, dict) and "matches" in result:
+            return result["matches"]
+        return None
 
 
 # Singleton instance

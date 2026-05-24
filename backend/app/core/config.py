@@ -46,8 +46,13 @@ class Settings(BaseSettings):
     # ── AI Engine ────────────────────────────────────────
     GEMINI_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
+    META_API_KEY: str = ""
+    PERPLEXITY_API_KEY: str = ""
+    GROK_API_KEY: str = ""
+    DEEPSEEK_API_KEY: str = ""
     AI_PRIMARY_MODEL: str = "gemini"
     AI_FALLBACK_MODEL: str = "openai"
+    AI_MODEL_NAME: str = ""
 
     # ── JWT Authentication ───────────────────────────────
     JWT_SECRET_KEY: str = "change-this-jwt-secret"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HiEye, HiPlay, HiClock, HiCurrencyRupee } from 'react-icons/hi';
+import { Navigate } from 'react-router-dom';
+import { HiEye, HiPlay, HiClock, HiCurrencyRupee, HiFilter, HiSortAscending, HiChevronLeft, HiChevronRight, HiSparkles } from 'react-icons/hi';
 import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
 import CareerProfileForm from '../components/common/CareerProfileForm';
@@ -8,16 +9,29 @@ import CareerCard from '../components/career/CareerCard';
 import useAuthStore from '../store/authStore';
 
 function Simulation() {
-  const { isAuthenticated } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.accessToken || state.access_token);
+
+  // Admin Guard Redirect
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
   const [selectedCareer, setSelectedCareer] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulation, setSimulation] = useState(null);
-  const [careers, setCareers] = useState([]);
-  const [filteredCareers, setFilteredCareers] = useState([]);
+  const [matches, setMatches] = useState([]);
+  const [aiActive, setAiActive] = useState(false);
+  const [aiModel, setAiModel] = useState(null);
+  
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('match_score'); // 'match_score', 'salary', 'growth_rate', 'title'
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showProfileModal, setShowProfileModal] = useState(!isAuthenticated);
-  const [profileAnswered, setProfileAnswered] = useState(isAuthenticated);
+  const [showProfileModal, setShowProfileModal] = useState(!token);
+  const [profileAnswered, setProfileAnswered] = useState(!!token);
   const [careerProfile, setCareerProfile] = useState({
     interests: [],
     strengths: [],
@@ -32,31 +46,52 @@ function Simulation() {
 
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
-  // Fetch available careers from API
-  useEffect(() => {
-    const fetchCareers = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`${baseUrl}/careers`);
-        if (response.ok) {
-          const data = await response.json();
-          const careersData = data.careers || data;
-          setCareers(careersData);
-          setFilteredCareers(careersData);
-          setError(null);
-        } else {
-          setError('Failed to load careers from the server.');
-        }
-      } catch (err) {
-        console.error('Error fetching careers:', err);
-        setError('Failed to connect to the server.');
-      } finally {
-        setLoading(false);
+  // Fetch matched careers from API
+  const fetchCareers = async () => {
+    try {
+      setLoading(true);
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      
+      // Build query string based on profile answers
+      const params = new URLSearchParams();
+      if (careerProfile.interests && careerProfile.interests.length > 0) {
+        params.append('interests', careerProfile.interests.join(','));
       }
-    };
+      if (careerProfile.strengths && careerProfile.strengths.length > 0) {
+        params.append('strengths', careerProfile.strengths.join(','));
+      }
+      if (careerProfile.industry_stream) {
+        params.append('stream', careerProfile.industry_stream);
+      }
 
-    fetchCareers();
-  }, [baseUrl]);
+      const response = await fetch(`${baseUrl}/careers/match?${params.toString()}`, { headers });
+      if (response.ok) {
+        const data = await response.json();
+        setMatches(data.matches || []);
+        setAiActive(data.ai_active || false);
+        setAiModel(data.ai_model || null);
+        setError(null);
+      } else {
+        setError('Failed to load careers from the server.');
+      }
+    } catch (err) {
+      console.error('Error fetching matched careers:', err);
+      setError('Failed to connect to the server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (profileAnswered) {
+      fetchCareers();
+    }
+  }, [profileAnswered, token]);
+
+  // Reset page when sorting/filtering changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, sortBy]);
 
   const handleCareerProfileChange = (field, value) => {
     setCareerProfile((prev) => ({
@@ -95,8 +130,6 @@ function Simulation() {
 
   const handleSaveProfile = () => {
     if (!validateProfile()) return;
-    
-    // Filter careers based on profile (optional: can be enhanced)
     setProfileAnswered(true);
     setShowProfileModal(false);
   };
@@ -111,7 +144,8 @@ function Simulation() {
     setSelectedCareer(career);
     setIsSimulating(true);
     try {
-      const response = await fetch(`${baseUrl}/careers/${career.id}/simulation`);
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await fetch(`${baseUrl}/careers/simulate/${career.id}`, { headers });
       if (response.ok) {
         const data = await response.json();
         
@@ -131,6 +165,50 @@ function Simulation() {
     }
   };
 
+  const filters = [
+    { key: 'all', label: 'All Streams' },
+    { key: 'science', label: 'Science' },
+    { key: 'commerce', label: 'Commerce' },
+    { key: 'arts', label: 'Arts' },
+    { key: 'vocational', label: 'Vocational' },
+  ];
+
+  // Filtering by Stream
+  const filteredMatches = matches.filter((m) => {
+    return activeFilter === 'all' || m.career.stream?.toLowerCase() === activeFilter.toLowerCase();
+  });
+
+  // Sorting
+  const sortedMatches = [...filteredMatches].sort((a, b) => {
+    if (sortBy === 'match_score') {
+      return b.match_score - a.match_score;
+    }
+    if (sortBy === 'salary') {
+      return (b.career.average_salary_entry ?? 0) - (a.career.average_salary_entry ?? 0);
+    }
+    if (sortBy === 'growth_rate') {
+      return (b.career.growth_rate ?? 0) - (a.career.growth_rate ?? 0);
+    }
+    if (sortBy === 'title') {
+      return a.career.title.localeCompare(b.career.title);
+    }
+    return 0;
+  });
+
+  // Pagination (9 per page)
+  const cardsPerPage = 9;
+  const totalPages = Math.ceil(sortedMatches.length / cardsPerPage) || 1;
+  const paginatedMatches = sortedMatches.slice(
+    (currentPage - 1) * cardsPerPage,
+    currentPage * cardsPerPage
+  );
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
   return (
     <div className="min-h-screen pt-24 pb-16" id="simulation-page">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -140,9 +218,24 @@ function Simulation() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center gap-2 mb-2">
-            <HiEye className="text-accent-400" size={20} />
-            <span className="text-sm text-accent-400 font-medium">AI Career Simulation</span>
+          <div className="flex items-center justify-between flex-wrap gap-4 mb-2">
+            <div className="flex items-center gap-2">
+              <HiEye className="text-accent-400" size={20} />
+              <span className="text-sm text-accent-400 font-medium">AI Career Simulation</span>
+            </div>
+            
+            {/* AI Active Indicator */}
+            {profileAnswered && !loading && (
+              aiActive ? (
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-pink-500/10 text-pink-400 border border-pink-500/20">
+                  <HiSparkles className="animate-pulse" /> Active AI Predictor: <span className="uppercase font-bold">{aiModel}</span>
+                </span>
+              ) : (
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-surface-800 text-surface-400 border border-white/5">
+                  Rule-Based Recommendation Active
+                </span>
+              )
+            )}
           </div>
           <h1 className="section-heading">
             Shadow Any <span className="gradient-text">Profession</span>
@@ -161,6 +254,50 @@ function Simulation() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
+              {/* Filters & Sort options */}
+              {profileAnswered && !loading && !error && (
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8"
+                >
+                  {/* Stream Filter Buttons */}
+                  <div className="flex flex-wrap gap-2 items-center bg-white/5 border border-white/10 p-1 rounded-xl">
+                    <HiFilter className="text-surface-500 ml-2 mr-1" size={16} />
+                    {filters.map((filter) => (
+                      <button
+                        key={filter.key}
+                        onClick={() => setActiveFilter(filter.key)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          activeFilter === filter.key
+                            ? 'bg-primary-600/20 text-primary-300 border border-primary-500/30'
+                            : 'text-surface-400 hover:text-white hover:bg-white/5 border border-transparent'
+                        }`}
+                        id={`filter-${filter.key}`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Sort Dropdown */}
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-2 rounded-xl">
+                    <HiSortAscending className="text-surface-400" size={16} />
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="bg-transparent text-xs text-white outline-none border-none cursor-pointer pr-4 font-semibold"
+                      id="career-sort"
+                    >
+                      <option value="match_score" className="bg-surface-950 text-white">Sort by Match Score</option>
+                      <option value="salary" className="bg-surface-950 text-white">Sort by Entry Salary</option>
+                      <option value="growth_rate" className="bg-surface-950 text-white">Sort by Growth Rate</option>
+                      <option value="title" className="bg-surface-950 text-white">Sort by Job Title</option>
+                    </select>
+                  </div>
+                </motion.div>
+              )}
+
               {loading && (
                 <div className="text-center py-16">
                   <motion.div
@@ -170,7 +307,7 @@ function Simulation() {
                   >
                     <div className="w-12 h-12 border-4 border-primary-600/30 border-t-primary-400 rounded-full"></div>
                   </motion.div>
-                  <p className="text-surface-400 mt-4">Loading simulation catalog...</p>
+                  <p className="text-surface-400 mt-4 animate-pulse">Loading simulation catalog...</p>
                 </div>
               )}
 
@@ -182,23 +319,62 @@ function Simulation() {
 
               {!loading && !error && profileAnswered && (
                 <>
-                  <p className="text-sm text-surface-400 mb-6">Select a career to simulate:</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredCareers.length > 0 ? (
-                      filteredCareers.map((career, i) => (
+                  <p className="text-sm text-surface-400 mb-6">
+                    Select a career to simulate ({sortedMatches.length} recommended options found):
+                  </p>
+                  
+                  {paginatedMatches.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                      {paginatedMatches.map((match, i) => (
                         <CareerCard
-                          key={career.id}
-                          career={career}
+                          key={match.career.id}
+                          career={match.career}
+                          matchScore={match.match_score}
+                          aiPredictOrder={match.ai_predict_order}
                           onClick={handleSimulate}
                           index={i}
                         />
-                      ))
-                    ) : (
-                      <div className="col-span-full text-center py-8 text-surface-400">
-                        <p>No careers found. Try adjusting your preferences.</p>
-                      </div>
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="col-span-full text-center py-16">
+                      <p className="text-surface-500 text-lg">No careers match your criteria.</p>
+                      <p className="text-surface-600 text-sm mt-2">Try adjusting your stream filters or answers.</p>
+                    </div>
+                  )}
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-4 mt-8">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
+                          currentPage === 1
+                            ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
+                            : 'border-white/10 bg-white/5 hover:border-primary-500/20 text-white'
+                        }`}
+                      >
+                        <HiChevronLeft size={16} />
+                      </button>
+                      
+                      <span className="text-xs text-surface-400 font-semibold font-mono">
+                        Page <span className="text-white font-bold">{currentPage}</span> of {totalPages}
+                      </span>
+
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
+                          currentPage === totalPages
+                            ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
+                            : 'border-white/10 bg-white/5 hover:border-primary-500/20 text-white'
+                        }`}
+                      >
+                        <HiChevronRight size={16} />
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </motion.div>
@@ -212,7 +388,7 @@ function Simulation() {
               {/* Back button */}
               <button
                 onClick={() => { setSimulation(null); setSelectedCareer(null); }}
-                className="text-sm text-surface-400 hover:text-white transition-colors"
+                className="text-sm text-surface-400 hover:text-white transition-colors flex items-center gap-1"
               >
                 ← Back to careers
               </button>
@@ -308,7 +484,7 @@ function Simulation() {
               <h3 className="text-2xl font-display font-bold text-white mb-2">
                 Simulating: {selectedCareer?.title}
               </h3>
-              <p className="text-surface-400">Building your immersive career experience...</p>
+              <p className="text-surface-400 animate-pulse">Building your immersive career experience...</p>
             </motion.div>
           )}
         </AnimatePresence>

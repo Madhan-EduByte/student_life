@@ -64,46 +64,94 @@ const DashboardOverview = () => {
   // Fetch all data
   const fetchData = async () => {
     setLoading(true);
+    setErrorMsg('');
     try {
       // 1. Stats
-      const statsRes = await api.get('/admin/dashboard/stats');
-      setStats(statsRes.data);
+      try {
+        const statsRes = await api.get('/admin/dashboard/stats');
+        setStats({
+          total_students: statsRes.data.total_students ?? 0,
+          active_careerGuides: statsRes.data.active_career_guides ?? 0,
+          total_careers: statsRes.data.total_careers ?? 0,
+          total_colleges: statsRes.data.total_colleges ?? 0,
+          system_health: statsRes.data.system_health ?? 'operational'
+        });
+      } catch (e) {
+        console.error('Failed to fetch admin stats:', e);
+        setStats(prev => ({ ...prev, system_health: 'error' }));
+      }
 
       // 2. Users
-      const usersRes = await api.get('/admin/users');
-      setUsers(usersRes.data);
+      try {
+        const usersRes = await api.get('/admin/users');
+        setUsers(usersRes.data || []);
+      } catch (e) {
+        console.error('Failed to fetch admin users:', e);
+      }
 
       // 3. Profiles
-      const profsRes = await api.get('/admin/student-profiles');
-      setStudentProfiles(profsRes.data);
+      try {
+        const profsRes = await api.get('/admin/student-profiles');
+        setStudentProfiles(profsRes.data || []);
+      } catch (e) {
+        console.error('Failed to fetch student profiles:', e);
+      }
 
       // 4. Careers
-      const careersRes = await api.get('/admin/careers');
-      setCareers(careersRes.data);
+      try {
+        const careersRes = await api.get('/admin/careers');
+        setCareers(careersRes.data || []);
+      } catch (e) {
+        console.error('Failed to fetch careers:', e);
+      }
 
       // 5. Colleges
-      const collegesRes = await api.get('/admin/colleges');
-      setColleges(collegesRes.data);
+      try {
+        const collegesRes = await api.get('/admin/colleges');
+        setColleges(collegesRes.data || []);
+      } catch (e) {
+        console.error('Failed to fetch colleges:', e);
+      }
 
       // 6. CareerGuides
-      const careerGuidesRes = await api.get('/admin/career-guides');
-      setCareerGuides(careerGuidesRes.data);
+      try {
+        const careerGuidesRes = await api.get('/admin/career-guides');
+        setCareerGuides(careerGuidesRes.data || []);
+      } catch (e) {
+        console.error('Failed to fetch career guides:', e);
+      }
 
       // 7. Milestones
-      const milestonesRes = await api.get('/admin/milestones');
-      setMilestones(milestonesRes.data);
+      try {
+        const milestonesRes = await api.get('/admin/milestones');
+        setMilestones(milestonesRes.data || []);
+      } catch (e) {
+        console.error('Failed to fetch milestones:', e);
+      }
 
       // 8. Session Logs
-      const logsRes = await api.get('/admin/session-logs');
-      setSessionLogs(logsRes.data);
+      try {
+        const logsRes = await api.get('/admin/session-logs');
+        setSessionLogs(logsRes.data || []);
+      } catch (e) {
+        console.error('Failed to fetch session logs:', e);
+      }
 
       // 9. Histories
-      const histRes = await api.get('/admin/career-guide-histories');
-      setCareerGuideHistories(histRes.data);
+      try {
+        const histRes = await api.get('/admin/career-guide-histories');
+        setCareerGuideHistories(histRes.data || []);
+      } catch (e) {
+        console.error('Failed to fetch career guide histories:', e);
+      }
 
       // 10. Outcomes
-      const outRes = await api.get('/admin/student-outcomes');
-      setStudentOutcomes(outRes.data);
+      try {
+        const outRes = await api.get('/admin/student-outcomes');
+        setStudentOutcomes(outRes.data || []);
+      } catch (e) {
+        console.error('Failed to fetch student outcomes:', e);
+      }
 
     } catch (err) {
       console.error('Failed to fetch admin data:', err);

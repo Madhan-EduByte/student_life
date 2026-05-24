@@ -73,14 +73,14 @@ class CollegeService:
         """Get detailed college information with courses and scores."""
         return db.query(College).filter(College.id == college_id).first()
 
-    def match_colleges(
+    async def match_colleges(
         self,
         db: Session,
         user_id: int,
         criteria: Optional[Dict] = None,
     ) -> List[Dict]:
         """AI-powered college matching for a student."""
-        # Get all colleges (in production, this would be more sophisticated)
+        # Get all colleges
         query = db.query(College)
 
         if criteria:
@@ -112,7 +112,45 @@ class CollegeService:
 
         colleges = query.limit(20).all()
 
-        # Score and rank matches
+        # Check if AI API is configured
+        from app.services.ai_service import ai_service
+        
+        if ai_service.is_api_configured():
+            colleges_data = []
+            for c in colleges:
+                colleges_data.append({
+                    "id": c.id,
+                    "name": c.name,
+                    "university": c.university,
+                    "nirf_rank": c.nirf_rank,
+                    "placement_rate": c.placement_rate,
+                    "average_package": c.average_package,
+                    "fee_range_max": c.fee_range_max,
+                    "city": c.city,
+                    "state": c.state,
+                    "type": c.type,
+                })
+            
+            ai_predictions = await ai_service.predict_college_matches(colleges_data, criteria or {})
+            if ai_predictions:
+                prediction_map = {p["college_id"]: p for p in ai_predictions}
+                matches = []
+                for college in colleges:
+                    pred = prediction_map.get(college.id)
+                    if pred:
+                        score = float(pred.get("match_score", 50.0))
+                        reasons = pred.get("match_reasons", ["Recommended by AI"])
+                        pred_index = next((idx + 1 for idx, item in enumerate(ai_predictions) if item["college_id"] == college.id), None)
+                        matches.append({
+                            "college": college,
+                            "match_score": score,
+                            "match_reasons": reasons,
+                            "ai_predict_order": pred_index
+                        })
+                matches.sort(key=lambda x: x.get("ai_predict_order", 999))
+                return matches[:10]
+
+        # Score and rank matches using rule-based fallback
         matches = []
         for college in colleges:
             score = self._calculate_match_score(college, criteria or {})
@@ -122,12 +160,14 @@ class CollegeService:
                     "college": college,
                     "match_score": score,
                     "match_reasons": reasons,
+                    "ai_predict_order": None
                 }
             )
 
         # Sort by match score descending
         matches.sort(key=lambda x: x["match_score"], reverse=True)
         return matches[:10]
+
 
     def _calculate_match_score(
         self, college: College, criteria: Dict

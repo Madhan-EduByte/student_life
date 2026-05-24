@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { HiSparkles, HiRefresh, HiAcademicCap, HiChartBar, HiPencil, HiCheck, HiX } from 'react-icons/hi';
 import FutureProofScore from '../components/career/FutureProofScore';
 import MilestoneTracker from '../components/dashboard/MilestoneTracker';
@@ -121,7 +121,12 @@ const mapBackendToCareerProfile = (backendProfile) => {
 
 function CareerGuide() {
   const token = useAuthStore(state => state.accessToken || state.access_token);
+  const user = useAuthStore(state => state.user);
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   const [careerGuide, setCareerGuide] = useState(demoCareerGuide);
   const [profile, setProfile] = useState(demoProfile);

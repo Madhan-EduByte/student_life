@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.services.ai_service import ai_service
 
 
-async def test_connection():
+async def verify_connection():
     """Test AI API connections."""
     print("=" * 50)
     print("DestinAI — AI Connection Test")
@@ -30,7 +30,7 @@ async def test_connection():
     print(f"\n🔑 OpenAI API Key: {'✅ Set' if settings.OPENAI_API_KEY else '❌ Not set'}")
     if settings.OPENAI_API_KEY:
         print(f"   Key prefix: {settings.OPENAI_API_KEY[:10]}...")
-        result = await ai_service.generate_with_openai("Say hello in JSON format: {\"message\": \"hello\"}")
+        result = await ai_service.generate_with_openai_compatible("Say hello in JSON format: {\"message\": \"hello\"}", base_url="", api_key=settings.OPENAI_API_KEY, default_model="gpt-4o")
         if result:
             print(f"   ✅ OpenAI connection successful: {result}")
         else:
@@ -44,4 +44,5 @@ async def test_connection():
 
 
 if __name__ == "__main__":
-    asyncio.run(test_connection())
+    asyncio.run(verify_connection())
+

@@ -55,7 +55,7 @@ function Footer() {
         <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-center items-center gap-4">
 
           <p className="text-surface-600 text-xs italic text-center w-full">
-            Built with purpose. Guided by AI. Forged for every student on earth.
+            developed by Future Ready Education Institute (FREI) by: Edubytes
           </p>
         </div>
       </div>

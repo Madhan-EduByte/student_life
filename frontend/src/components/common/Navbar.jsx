@@ -31,24 +31,35 @@ function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.filter(link => !isAuthenticated || (link.path !== '/signup' && !link.label.toLowerCase().includes('get started'))).map((link) => {
-              const linkPath = (link.path === '/dashboard' && user?.role === 'admin') ? '/admin/dashboard' : link.path;
-              const isActive = location.pathname === linkPath;
-              return (
-                <Link
-                  key={linkPath}
-                  to={linkPath}
-                  id={`nav-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'text-white bg-primary-600/20 border border-primary-500/30'
-                      : 'text-surface-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
+            {NAV_LINKS
+              .filter(link => {
+                if (user?.role === 'admin') {
+                  return link.path === '/';
+                }
+                return true;
+              })
+              .concat(
+                isAuthenticated 
+                  ? [{ path: user?.role === 'admin' ? '/admin/dashboard' : '/dashboard', label: user?.role === 'admin' ? 'Admin Portal' : 'Dashboard' }]
+                  : []
+              )
+              .map((link) => {
+                const isActive = location.pathname === link.path;
+                return (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    id={`nav-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'text-white bg-primary-600/20 border border-primary-500/30'
+                        : 'text-surface-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
           </div>
 
           {/* Auth Buttons / User */}
@@ -144,24 +155,35 @@ function Navbar() {
             style={{ background: 'rgba(15, 23, 42, 0.95)' }}
           >
             <div className="px-4 py-4 space-y-2">
-              {NAV_LINKS.filter(link => !isAuthenticated || (link.path !== '/signup' && !link.label.toLowerCase().includes('get started'))).map((link) => {
-                const linkPath = (link.path === '/dashboard' && user?.role === 'admin') ? '/admin/dashboard' : link.path;
-                const isActive = location.pathname === linkPath;
-                return (
-                <Link
-                  key={linkPath}
-                  to={linkPath}
-                  onClick={() => setIsOpen(false)}
-                  className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    isActive
-                      ? 'text-white bg-primary-600/20'
-                      : 'text-surface-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-                );
-              })}
+              {NAV_LINKS
+                .filter(link => {
+                  if (user?.role === 'admin') {
+                    return link.path === '/';
+                  }
+                  return true;
+                })
+                .concat(
+                  isAuthenticated 
+                    ? [{ path: user?.role === 'admin' ? '/admin/dashboard' : '/dashboard', label: user?.role === 'admin' ? 'Admin Portal' : 'Dashboard' }]
+                    : []
+                )
+                .map((link) => {
+                  const isActive = location.pathname === link.path;
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      onClick={() => setIsOpen(false)}
+                      className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        isActive
+                          ? 'text-white bg-primary-600/20'
+                          : 'text-surface-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
               {isAuthenticated && (
                 <div className="space-y-2 mt-4 pt-4 border-t border-white/10">
                   <div className="px-4 py-2.5 rounded-lg bg-white/5 border border-white/10">

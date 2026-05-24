@@ -8,7 +8,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_current_user_optional
 from app.core.database import get_db
 from app.models.career import Career, CareerScore
 from app.models.user import User
@@ -56,6 +56,120 @@ async def list_careers(
     )
 
 
+@router.get("/match")
+async def match_careers(
+    interests: Optional[str] = Query(None),
+    strengths: Optional[str] = Query(None),
+    stream: Optional[str] = Query(None),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
+):
+    """Get AI-matched and ranked careers for a student profile."""
+    from app.models.student import StudentProfile
+    from app.services.ai_service import ai_service
+
+    criteria = {}
+    if current_user:
+        profile = (
+            db.query(StudentProfile)
+            .filter(StudentProfile.user_id == current_user.id)
+            .first()
+        )
+        if profile:
+            criteria = {
+                "interests": interests or profile.interest_areas or "",
+                "strengths": strengths or profile.strengths or "",
+                "preferred_stream": stream or profile.preferred_stream or "",
+            }
+
+    if not criteria:
+        criteria = {
+            "interests": interests or "",
+            "strengths": strengths or "",
+            "preferred_stream": stream or "",
+        }
+
+    # Fetch all careers
+    all_careers = db.query(Career).all()
+
+    # Check if AI is configured
+    if ai_service.is_api_configured() and all_careers:
+        careers_data = []
+        for c in all_careers:
+            careers_data.append({
+                "id": c.id,
+                "title": c.title,
+                "stream": c.stream,
+                "category": c.category,
+                "demand_level": c.demand_level,
+                "average_salary_entry": c.average_salary_entry,
+                "growth_rate": c.growth_rate,
+            })
+
+        ai_predictions = await ai_service.predict_career_matches(careers_data, criteria)
+        if ai_predictions:
+            prediction_map = {p["career_id"]: p for p in ai_predictions}
+            matches = []
+            for c in all_careers:
+                pred = prediction_map.get(c.id)
+                if pred:
+                    score = float(pred.get("match_score", 50.0))
+                    reasons = pred.get("match_reasons", ["Matches your profile"])
+                    pred_index = next((idx + 1 for idx, item in enumerate(ai_predictions) if item["career_id"] == c.id), None)
+                    matches.append({
+                        "career": CareerResponse.model_validate(c),
+                        "match_score": score,
+                        "match_reasons": reasons,
+                        "ai_predict_order": pred_index,
+                    })
+            matches.sort(key=lambda x: x.get("ai_predict_order", 999))
+            return {
+                "matches": matches,
+                "ai_active": True,
+                "ai_model": ai_service.primary_model
+            }
+
+    # Standard database/rule-based matching fallback
+    matches = []
+    pref_stream = criteria.get("preferred_stream", "").lower()
+    interest_words = [w.strip().lower() for w in criteria.get("interests", "").split(",") if w.strip()]
+
+    for c in all_careers:
+        score = 50.0
+        reasons = []
+
+        # Stream compatibility (up to 25 points)
+        if pref_stream and c.stream and pref_stream in c.stream.lower():
+            score += 25.0
+            reasons.append(f"Aligned with your stream preference ({c.stream})")
+
+        # Interest matches (up to 25 points)
+        matched_interests = []
+        for word in interest_words:
+            if word in (c.title or "").lower() or word in (c.description or "").lower() or word in (c.category or "").lower():
+                matched_interests.append(word)
+        if matched_interests:
+            score += min(len(matched_interests) * 10, 25)
+            reasons.append(f"Matches interests: {', '.join(matched_interests)}")
+
+        if not reasons:
+            reasons.append("Good overall career fit")
+
+        matches.append({
+            "career": CareerResponse.model_validate(c),
+            "match_score": min(score, 100.0),
+            "match_reasons": reasons,
+            "ai_predict_order": None,
+        })
+
+    matches.sort(key=lambda x: x["match_score"], reverse=True)
+    return {
+        "matches": matches,
+        "ai_active": False,
+        "ai_model": None
+    }
+
+
 @router.get("/{career_id}", response_model=CareerWithScore)
 async def get_career(career_id: int, db: Session = Depends(get_db)):
     """Get career details with future-proof score."""
@@ -79,3 +193,4 @@ async def get_career(career_id: int, db: Session = Depends(get_db)):
         future_proof=FutureProofScore.model_validate(score) if score else None,
     )
     return result
+
