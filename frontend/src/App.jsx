@@ -26,9 +26,9 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/roadmap" element={<Roadmap />} />
-            <Route path="/colleges" element={<CollegeMatch />} />
-            <Route path="/simulation" element={<Simulation />} />
+            <Route path="/careerGuide" element={<Roadmap />} />
+            <Route path="/collegesSimulate" element={<CollegeMatch />} />
+            <Route path="/careerSimulate" element={<Simulation />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />

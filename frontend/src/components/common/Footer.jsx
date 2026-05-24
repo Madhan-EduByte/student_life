@@ -24,9 +24,9 @@ function Footer() {
           <div>
             <h3 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">Quick Links</h3>
             <ul className="space-y-2">
-              <li><Link to="/roadmap" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Career Guide</Link></li>
-              <li><Link to="/colleges" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">College Database</Link></li>
-              <li><Link to="/simulation" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Simulate</Link></li>
+              <li><Link to="/careerGuide" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Career Guide</Link></li>
+              <li><Link to="/collegesSimulate" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Colleges Simulate</Link></li>
+              <li><Link to="/careerSimulate" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Career Simulate</Link></li>
               <li><Link to="/dashboard" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Dashboard</Link></li>
             </ul>
           </div>

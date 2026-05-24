@@ -108,20 +108,10 @@ function Roadmap() {
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
   const [roadmap, setRoadmap] = useState(demoRoadmap);
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(demoProfile);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [careerProfile, setCareerProfile] = useState({
-    interests: [],
-    strengths: [],
-    industry_stream: '',
-    education_level: '',
-    budget: '',
-    location: '',
-    work_life_balance: '',
-    risk_tolerance: '',
-    interaction_style: '',
-  });
+  const [careerProfile, setCareerProfile] = useState(demoProfile);
 
   // Fetch Profile & Roadmap on load
   useEffect(() => {
@@ -346,7 +336,7 @@ function Roadmap() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <HiSparkles className="text-primary-400" />
-                <span className="text-sm text-primary-400 font-medium">AI-Generated Roadmap</span>
+                <span className="text-sm text-primary-400 font-medium">AI-Generated Career Guide</span>
                 <span className="badge-primary text-xs">v{roadmap.version}</span>
               </div>
               <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">
@@ -357,7 +347,7 @@ function Roadmap() {
             {generating && (
               <div className="flex items-center gap-2 text-primary-400 text-sm font-medium bg-primary-900/20 px-4 py-2 rounded-full border border-primary-500/20">
                 <HiRefresh size={16} className="animate-spin" />
-                Generating AI Roadmap...
+                Generating Career Guide...
               </div>
             )}
           </div>
@@ -430,7 +420,7 @@ function Roadmap() {
               onClick={handleSaveProfile}
               loading={generating}
             >
-              Save & Update Roadmap
+              Save & Update Career Guide
             </Button>
           </div>
         </Modal>
@@ -481,16 +471,16 @@ function Roadmap() {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Link
-                  to="/colleges"
+                  to="/collegesSimulate"
                   className="block p-4 rounded-xl bg-primary-600/10 border border-primary-500/20 text-sm text-primary-300 hover:bg-primary-600/20 transition-all text-center font-medium"
                 >
-                  View Matched Colleges →
+                  Colleges Simulate →
                 </Link>
                 <Link
-                  to="/simulation"
+                  to="/careerSimulate"
                   className="block p-4 rounded-xl bg-accent-600/10 border border-accent-500/20 text-sm text-accent-300 hover:bg-accent-600/20 transition-all text-center font-medium"
                 >
-                  Simulate This Career →
+                  Career Simulate →
                 </Link>
               </div>
             </div>

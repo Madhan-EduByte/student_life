@@ -68,13 +68,13 @@ function CollegeMatch() {
         >
           <div className="flex items-center gap-2 mb-2">
             <HiAcademicCap className="text-primary-400" size={20} />
-            <span className="text-sm text-primary-400 font-medium">AI-Matched Colleges</span>
+            <span className="text-sm text-primary-400 font-medium">Colleges Simulate</span>
           </div>
           <h1 className="section-heading">
-            Your <span className="gradient-text">College Matches</span>
+            Your <span className="gradient-text">Colleges Simulate Matches</span>
           </h1>
           <p className="section-subheading">
-            Colleges matched to your profile, budget, and career goals — ranked by AI compatibility.
+            Colleges simulated for your profile, budget, and career goals — ranked by AI compatibility.
           </p>
         </motion.div>
 
@@ -87,7 +87,7 @@ function CollegeMatch() {
         >
           <div className="flex-1">
             <Input
-              placeholder="Search colleges, cities..."
+              placeholder="Search Colleges Simulate, cities..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               icon={<HiSearch size={18} />}
@@ -115,7 +115,7 @@ function CollegeMatch() {
 
         {/* Results count */}
         <p className="text-sm text-surface-500 mb-4">
-          {loading ? 'Loading...' : `${filteredMatches.length} colleges found`}
+          {loading ? 'Loading...' : `${filteredMatches.length} Colleges Simulate found`}
         </p>
 
         {/* Loading State */}
@@ -128,7 +128,7 @@ function CollegeMatch() {
             >
               <div className="w-12 h-12 border-4 border-primary-600/30 border-t-primary-400 rounded-full"></div>
             </motion.div>
-            <p className="text-surface-400 mt-4">Loading colleges from database...</p>
+            <p className="text-surface-400 mt-4">Loading Colleges Simulate from database...</p>
           </div>
         )}
 

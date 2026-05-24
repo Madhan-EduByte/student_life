@@ -171,51 +171,11 @@ function SignUp() {
         interaction_style: careerProfile.interaction_style || '',
       });
 
-      // Login to authenticate and get the token
+      // Login to authenticate and get the token (which will auto-navigate to /roadmap)
       const loginResult = await login(formData.email, formData.password);
       if (!loginResult.success) {
         throw new Error(loginResult.error || 'Failed to auto-login after registration');
       }
-
-      // Save career profile and trigger initial AI roadmap generation
-      let token = localStorage.getItem('access_token');
-      if (!token) {
-        const authState = useAuthStore.getState();
-        token = authState.accessToken || authState.access_token;
-      }
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
-      
-      // Update profile inputs in the database
-      await fetch(`${baseUrl}/students/profile`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(careerProfile),
-      });
-
-      // Call initial AI Roadmap generation
-      await fetch(`${baseUrl}/roadmap/generate`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          career_inputs: {
-            interest_areas: careerProfile.interests,
-            strengths: careerProfile.strengths,
-            preferred_stream: careerProfile.industry_stream,
-            education_level: careerProfile.education_level,
-            budget_range: careerProfile.budget,
-            location_preference: careerProfile.location,
-            work_life_balance: careerProfile.work_life_balance || '',
-            risk_tolerance: careerProfile.risk_tolerance || '',
-            interaction_style: careerProfile.interaction_style || '',
-          }
-        }),
-      });
 
       setSuccess('✅ Account created and career roadmap generated!');
       setFormData({
@@ -236,11 +196,6 @@ function SignUp() {
         risk_tolerance: '',
         interaction_style: '',
       });
-
-      // Navigate to roadmap after 1.5 seconds
-      setTimeout(() => {
-        navigate('/roadmap');
-      }, 1500);
     } catch (err) {
       const errorMsg = getSignUpErrorMessage(err);
       setError(errorMsg);

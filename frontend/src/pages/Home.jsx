@@ -81,8 +81,8 @@ function Home() {
                 Go to Dashboard →
               </Link>
             )}
-            <Link to="/simulation" className="btn-secondary text-lg px-8 py-4" id="hero-simulate">
-              Try Career Simulation
+            <Link to="/careerSimulate" className="btn-secondary text-lg px-8 py-4" id="hero-simulate">
+              Try Career Simulate
             </Link>
           </motion.div>
 

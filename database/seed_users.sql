@@ -9,7 +9,7 @@ INSERT IGNORE INTO users (
   email,
   password_hash,
   full_name,
-  phone,\
+  phone,
   role,
   is_active,
   is_verified,
@@ -31,18 +31,21 @@ INSERT IGNORE INTO student_profiles (
   education_level,
   budget_range,
   location_preference,
+  work_life_balance,
+  risk_tolerance,
+  interaction_style,
   created_at,
   updated_at
 ) VALUES 
-((SELECT id FROM users WHERE email='student@example.com'), 'technology, coding, logic', 'problem-solving, mathematics', 'science', '12th Grade', '1-5 Lakhs', 'Bangalore, India', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-((SELECT id FROM users WHERE email='student2@example.com'), 'business, marketing, finance', 'leadership, communication', 'commerce', '12th Grade', '5-10 Lakhs', 'Mumbai, India', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-((SELECT id FROM users WHERE email='student3@example.com'), 'art, design, psychology', 'creativity, empathy', 'arts', '12th Grade', '10-15 Lakhs', 'Delhi, India', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+((SELECT id FROM users WHERE email='student@example.com'), 'technical, analytical', 'technical_systems, mathematical', 'technology', 'bachelor', 'high', 'major_hub', 'standard', 'moderate', 'balanced', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+((SELECT id FROM users WHERE email='student2@example.com'), 'enterprising, organizational', 'communication, interpersonal', 'business', 'bachelor', 'high', 'major_hub', 'hustle', 'high', 'collaborative', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+((SELECT id FROM users WHERE email='student3@example.com'), 'creative, social', 'creative_spatial, interpersonal', 'creative_arts', 'bachelor', 'medium', 'remote', 'flexible', 'moderate', 'balanced', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Seed active AI roadmaps for the demo students so their dashboards look complete immediately
 INSERT IGNORE INTO roadmaps (id, user_id, title, summary, career_path, recommended_stream, confidence_score, future_proof_score, ai_model_used, version, is_active, created_at, updated_at) VALUES 
-(1, (SELECT id FROM users WHERE email='student@example.com'), 'Your Path to Becoming a Software Engineer', 'Based on your interests in technology and problem-solving strengths, we recommend pursuing a career as a Software Engineer. This roadmap will guide you through the next 12 weeks.', 'Software Engineer', 'science', 85, 78, 'gemini', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, (SELECT id FROM users WHERE email='student2@example.com'), 'Your Path to Becoming a Product Manager', 'Based on your leadership strengths and business interests, Product Management is highly recommended.', 'Product Manager', 'commerce', 90, 85, 'gemini', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, (SELECT id FROM users WHERE email='student3@example.com'), 'Your Path to Becoming a UX Designer', 'Your empathy and creativity align perfectly with UX Design.', 'UX Designer', 'arts', 88, 80, 'gemini', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(1, (SELECT id FROM users WHERE email='student@example.com'), 'Your Path to Becoming a Software Engineer', 'Based on your interests in technology and problem-solving strengths, we recommend pursuing a career as a Software Engineer. This roadmap will guide you through the next 12 weeks.', 'Software Engineer', 'technology', 85, 78, 'gemini', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, (SELECT id FROM users WHERE email='student2@example.com'), 'Your Path to Becoming a Product Manager', 'Based on your leadership strengths and business interests, Product Management is highly recommended.', 'Product Manager', 'business', 90, 85, 'gemini', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, (SELECT id FROM users WHERE email='student3@example.com'), 'Your Path to Becoming a UX Designer', 'Your empathy and creativity align perfectly with UX Design.', 'UX Designer', 'creative_arts', 88, 80, 'gemini', 1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Seed realistic milestones for John Doe's Software Engineering roadmap
 INSERT IGNORE INTO milestones (roadmap_id, week_number, title, description, category, priority, estimated_hours, is_completed) VALUES
