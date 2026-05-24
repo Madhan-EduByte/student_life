@@ -668,7 +668,7 @@ Respond ONLY with valid JSON."""
         """Use the selected LLM to rank and score colleges based on criteria."""
         college_list_str = "\n".join([
             f"- ID: {c['id']}, Name: {c['name']}, University: {c.get('university') or 'N/A'}, NIRF Rank: {c.get('nirf_rank') or 'N/A'}, Placement Rate: {c.get('placement_rate') or 'N/A'}%, Average Package: {c.get('average_package') or 'N/A'} LPA, Fees Max: {c.get('fee_range_max') or 'N/A'}, City: {c.get('city') or 'N/A'}, State: {c.get('state') or 'N/A'}, Type: {c.get('type') or 'N/A'}"
-            for c in colleges
+            for c in colleges[:50]
         ])
         
         prompt = f"""You are DestinAI, an expert AI education counselor. Rank the following colleges based on the student's criteria.
@@ -710,7 +710,7 @@ Respond ONLY with valid JSON."""
         """Use the selected LLM to rank and score careers based on criteria."""
         career_list_str = "\n".join([
             f"- ID: {c['id']}, Title: {c['title']}, Stream: {c.get('stream') or 'N/A'}, Category: {c.get('category') or 'N/A'}, Demand: {c.get('demand_level') or 'N/A'}, Entry Salary: {c.get('average_salary_entry') or 'N/A'}, Growth Rate: {c.get('growth_rate') or 0}%"
-            for c in careers
+            for c in careers[:50]
         ])
         
         prompt = f"""You are DestinAI, an expert AI career counselor. Rank the following careers based on the student's interests and profile.

@@ -173,17 +173,17 @@ class CollegeService:
                     )
                 )
 
-        colleges = query_strict.limit(30).all()
+        colleges = query_strict.limit(1000).all()
 
         # Fallback 1: Relax budget and location, but keep the stream filter intact!
         if not colleges:
             logger.warning("No colleges found with strict filters. Relaxing secondary filters but keeping stream filter.")
-            colleges = query.limit(30).all()
+            colleges = query.limit(1000).all()
 
             # Fallback 2: Absolute fallback to any colleges (only if no colleges offer the stream at all)
             if not colleges:
                 logger.warning("No colleges found with stream filter. Absolute fallback to any colleges.")
-                colleges = db.query(College).limit(30).all()
+                colleges = db.query(College).limit(1000).all()
 
         # Attach recommended courses matching the student's stream preference
         for c in colleges:
