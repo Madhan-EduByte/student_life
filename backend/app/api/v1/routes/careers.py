@@ -115,18 +115,29 @@ async def match_careers(
                 if pred:
                     score = float(pred.get("match_score", 50.0))
                     reasons = pred.get("match_reasons", ["Matches your profile"])
-                    pred_index = next((idx + 1 for idx, item in enumerate(ai_predictions) if item["career_id"] == c.id), None)
+                    
+                    # Only show AI rank badge if a real validated provider succeeded
+                    pred_index = None
+                    if ai_service.last_used_model != "mock":
+                        pred_index = next((idx + 1 for idx, item in enumerate(ai_predictions) if item["career_id"] == c.id), None)
+                        
                     matches.append({
                         "career": CareerResponse.model_validate(c),
                         "match_score": score,
                         "match_reasons": reasons,
                         "ai_predict_order": pred_index,
                     })
-            matches.sort(key=lambda x: x.get("ai_predict_order", 999))
+            
+            if ai_service.last_used_model != "mock":
+                matches.sort(key=lambda x: x.get("ai_predict_order") or 999)
+            else:
+                matches.sort(key=lambda x: x["match_score"], reverse=True)
+                
+            is_real_ai = ai_service.last_used_model != "mock"
             return {
                 "matches": matches,
-                "ai_active": True,
-                "ai_model": ai_service.primary_model
+                "ai_active": is_real_ai,
+                "ai_model": ai_service.last_used_model if is_real_ai else None
             }
 
     # Standard database/rule-based matching fallback

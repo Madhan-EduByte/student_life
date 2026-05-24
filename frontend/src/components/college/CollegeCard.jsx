@@ -91,9 +91,28 @@ function CollegeCard({ college, matchScore, matchReasons, onClick, index = 0, ai
         )}
       </div>
 
+      {/* Recommended Courses */}
+      {college.recommended_courses && college.recommended_courses.length > 0 && (
+        <div className="mb-4 bg-white/2 p-3 rounded-xl border border-white/5">
+          <p className="text-xs text-surface-400 font-semibold mb-2 flex items-center gap-1.5">
+            <span className="text-primary-400">🎓</span> Courses for you:
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {college.recommended_courses.slice(0, 4).map((course, i) => (
+              <span
+                key={i}
+                className="px-2.5 py-0.5 rounded-lg text-[10px] bg-primary-600/10 text-primary-300 border border-primary-500/20 font-semibold"
+              >
+                {course}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Match Reasons */}
       {matchReasons && matchReasons.length > 0 && (
-        <div className="space-y-1">
+        <div className="space-y-1 mb-2">
           {matchReasons.slice(0, 2).map((reason, i) => (
             <p key={i} className="text-xs text-surface-400 flex items-center gap-1">
               <span className="text-green-400">✓</span> {reason}

@@ -98,6 +98,7 @@ async def match_colleges(
     matches = await college_service.match_colleges(db, user_id, criteria)
 
     from app.services.ai_service import ai_service
+    is_real_ai = ai_service.last_used_model != "mock"
     return {
         "matches": [
             {
@@ -108,8 +109,8 @@ async def match_colleges(
             }
             for m in matches
         ],
-        "ai_active": ai_service.is_api_configured(),
-        "ai_model": ai_service.primary_model if ai_service.is_api_configured() else None
+        "ai_active": is_real_ai,
+        "ai_model": ai_service.last_used_model if is_real_ai else None
     }
 
 

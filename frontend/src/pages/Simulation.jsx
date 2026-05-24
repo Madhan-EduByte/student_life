@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Navigate } from 'react-router-dom';
-import { HiEye, HiPlay, HiClock, HiCurrencyRupee, HiFilter, HiSortAscending, HiChevronLeft, HiChevronRight, HiSparkles } from 'react-icons/hi';
+import { HiEye, HiPlay, HiClock, HiCurrencyRupee, HiFilter, HiSortAscending, HiChevronLeft, HiChevronRight, HiSparkles, HiSearch } from 'react-icons/hi';
 import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
 import CareerProfileForm from '../components/common/CareerProfileForm';
 import CareerCard from '../components/career/CareerCard';
+import Input from '../components/common/Input';
 import useAuthStore from '../store/authStore';
 
 function Simulation() {
@@ -27,6 +28,7 @@ function Simulation() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [sortBy, setSortBy] = useState('match_score'); // 'match_score', 'salary', 'growth_rate', 'title'
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -91,7 +93,7 @@ function Simulation() {
   // Reset page when sorting/filtering changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeFilter, sortBy]);
+  }, [searchTerm, activeFilter, sortBy]);
 
   const handleCareerProfileChange = (field, value) => {
     setCareerProfile((prev) => ({
@@ -173,9 +175,15 @@ function Simulation() {
     { key: 'vocational', label: 'Vocational' },
   ];
 
-  // Filtering by Stream
+  // Filtering by Stream & Search Term
   const filteredMatches = matches.filter((m) => {
-    return activeFilter === 'all' || m.career.stream?.toLowerCase() === activeFilter.toLowerCase();
+    const titleMatch = m.career.title?.toLowerCase().includes(searchTerm.toLowerCase());
+    const descMatch = m.career.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const catMatch = m.career.category?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !searchTerm || titleMatch || descMatch || catMatch;
+
+    const matchesFilter = activeFilter === 'all' || m.career.stream?.toLowerCase() === activeFilter.toLowerCase();
+    return matchesSearch && matchesFilter;
   });
 
   // Sorting
@@ -259,41 +267,55 @@ function Simulation() {
                 <motion.div
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8"
+                  className="flex flex-col lg:flex-row gap-4 mb-8"
                 >
-                  {/* Stream Filter Buttons */}
-                  <div className="flex flex-wrap gap-2 items-center bg-white/5 border border-white/10 p-1 rounded-xl">
-                    <HiFilter className="text-surface-500 ml-2 mr-1" size={16} />
-                    {filters.map((filter) => (
-                      <button
-                        key={filter.key}
-                        onClick={() => setActiveFilter(filter.key)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                          activeFilter === filter.key
-                            ? 'bg-primary-600/20 text-primary-300 border border-primary-500/30'
-                            : 'text-surface-400 hover:text-white hover:bg-white/5 border border-transparent'
-                        }`}
-                        id={`filter-${filter.key}`}
-                      >
-                        {filter.label}
-                      </button>
-                    ))}
+                  {/* Search Bar */}
+                  <div className="flex-1 w-full lg:w-auto">
+                    <Input
+                      placeholder="Search Career Simulation, titles, category..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      icon={<HiSearch size={18} />}
+                      id="career-search"
+                    />
                   </div>
 
-                  {/* Sort Dropdown */}
-                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-2 rounded-xl">
-                    <HiSortAscending className="text-surface-400" size={16} />
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="bg-transparent text-xs text-white outline-none border-none cursor-pointer pr-4 font-semibold"
-                      id="career-sort"
-                    >
-                      <option value="match_score" className="bg-surface-950 text-white">Sort by Match Score</option>
-                      <option value="salary" className="bg-surface-950 text-white">Sort by Entry Salary</option>
-                      <option value="growth_rate" className="bg-surface-950 text-white">Sort by Growth Rate</option>
-                      <option value="title" className="bg-surface-950 text-white">Sort by Job Title</option>
-                    </select>
+                  {/* Filters & Sort options */}
+                  <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+                    {/* Stream Filter Buttons */}
+                    <div className="flex flex-wrap gap-2 items-center bg-white/5 border border-white/10 p-1 rounded-xl">
+                      <HiFilter className="text-surface-500 ml-2 mr-1" size={16} />
+                      {filters.map((filter) => (
+                        <button
+                          key={filter.key}
+                          onClick={() => setActiveFilter(filter.key)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                            activeFilter === filter.key
+                              ? 'bg-primary-600/20 text-primary-300 border border-primary-500/30'
+                              : 'text-surface-400 hover:text-white hover:bg-white/5 border border-transparent'
+                          }`}
+                          id={`filter-${filter.key}`}
+                        >
+                          {filter.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Sort Dropdown */}
+                    <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-2 rounded-xl">
+                      <HiSortAscending className="text-surface-400" size={16} />
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="bg-transparent text-xs text-white outline-none border-none cursor-pointer pr-4 font-semibold"
+                        id="career-sort"
+                      >
+                        <option value="match_score" className="bg-surface-950 text-white">Sort by Match Score</option>
+                        <option value="salary" className="bg-surface-950 text-white">Sort by Entry Salary</option>
+                        <option value="growth_rate" className="bg-surface-950 text-white">Sort by Growth Rate</option>
+                        <option value="title" className="bg-surface-950 text-white">Sort by Job Title</option>
+                      </select>
+                    </div>
                   </div>
                 </motion.div>
               )}

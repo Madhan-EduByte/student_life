@@ -62,6 +62,11 @@ function CollegeMatch() {
     setCurrentPage(1);
   }, [searchTerm, activeFilter, sortBy]);
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const filters = [
     { key: 'all', label: 'All Types' },
     { key: 'government', label: 'Government' },

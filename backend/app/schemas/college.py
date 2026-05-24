@@ -103,6 +103,7 @@ class CollegeResponse(BaseModel):
     placement_rate: Optional[float] = None
     average_package: Optional[float] = None
     highest_package: Optional[float] = None
+    recommended_courses: Optional[List[str]] = None
 
     class Config:
         from_attributes = True

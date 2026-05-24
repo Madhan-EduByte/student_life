@@ -19,9 +19,11 @@ class AIService:
     def __init__(self):
         self.primary_model = settings.AI_PRIMARY_MODEL
         self.fallback_model = settings.AI_FALLBACK_MODEL
+        self._key_validity_cache = {}
+        self.last_used_model = "mock"
 
     def is_api_configured(self, provider: Optional[str] = None) -> bool:
-        """Check if the selected AI provider's API key is configured and valid."""
+        """Check if the selected AI provider's API key is configured (i.e. not empty)."""
         prov = (provider or self.primary_model).lower()
         key = ""
         if prov == "gemini":
@@ -37,7 +39,104 @@ class AIService:
         elif prov == "deepseek":
             key = settings.DEEPSEEK_API_KEY
 
-        return bool(key) and "your-key" not in key.lower() and "your-api" not in key.lower() and key.strip() != ""
+        return bool(key) and key.strip() != ""
+
+    def is_api_key_placeholder(self, provider: Optional[str] = None) -> bool:
+        """Check if the configured API key is just a placeholder."""
+        prov = (provider or self.primary_model).lower()
+        key = ""
+        if prov == "gemini":
+            key = settings.GEMINI_API_KEY
+        elif prov == "openai":
+            key = settings.OPENAI_API_KEY
+        elif prov == "meta":
+            key = settings.META_API_KEY
+        elif prov == "perplexity":
+            key = settings.PERPLEXITY_API_KEY
+        elif prov == "grok":
+            key = settings.GROK_API_KEY
+        elif prov == "deepseek":
+            key = settings.DEEPSEEK_API_KEY
+
+        return "your-key" in key.lower() or "your-api" in key.lower()
+
+    async def verify_provider_key(self, provider: str) -> bool:
+        """Perform a quick, lightweight connection test to verify if the API key is working."""
+        prov = provider.lower()
+        if prov in self._key_validity_cache:
+            return self._key_validity_cache[prov]
+
+        if not self.is_api_configured(prov) or self.is_api_key_placeholder(prov):
+            self._key_validity_cache[prov] = False
+            return False
+
+        try:
+            logger.info(f"Performing live validation test for AI provider '{prov}'...")
+            if prov == "gemini":
+                import google.generativeai as genai
+                genai.configure(api_key=settings.GEMINI_API_KEY)
+                model = genai.GenerativeModel("gemini-1.5-flash")
+                # Fast connection test
+                response = model.generate_content("Ping")
+                is_valid = response is not None and bool(response.text)
+            else:
+                from openai import OpenAI
+                api_key = ""
+                base_url = ""
+                default_model = "gpt-4o"
+                if prov == "openai":
+                    api_key = settings.OPENAI_API_KEY
+                elif prov == "meta":
+                    api_key = settings.META_API_KEY
+                    base_url = "https://api.together.xyz/v1"
+                    default_model = "meta-llama/Llama-3-8b-chat-hf"
+                elif prov == "perplexity":
+                    api_key = settings.PERPLEXITY_API_KEY
+                    base_url = "https://api.perplexity.ai"
+                    default_model = "sonar-reasoning"
+                elif prov == "grok":
+                    api_key = settings.GROK_API_KEY
+                    base_url = "https://api.x.ai/v1"
+                    default_model = "grok-beta"
+                elif prov == "deepseek":
+                    api_key = settings.DEEPSEEK_API_KEY
+                    base_url = "https://api.deepseek.com/v1"
+                    default_model = "deepseek-chat"
+
+                model_name = settings.AI_MODEL_NAME if settings.AI_MODEL_NAME else default_model
+                client_args = {"api_key": api_key}
+                if base_url:
+                    client_args["base_url"] = base_url
+                client = OpenAI(**client_args)
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=[{"role": "user", "content": "Ping"}],
+                    max_tokens=5,
+                )
+                is_valid = response is not None and len(response.choices) > 0
+
+            self._key_validity_cache[prov] = is_valid
+            return is_valid
+        except Exception as e:
+            logger.warning(f"Connection test failed for provider '{prov}': {e}")
+            self._key_validity_cache[prov] = False
+            return False
+
+    async def get_active_validated_provider(self) -> Optional[str]:
+        """Check primary provider first, and if invalid, fall back to any other configured and validated working provider."""
+        primary = self.primary_model.lower()
+        if await self.verify_provider_key(primary):
+            return primary
+
+        # Search other providers in order of fallback
+        for prov in ["gemini", "openai", "meta", "perplexity", "grok", "deepseek"]:
+            if prov == primary:
+                continue
+            if await self.verify_provider_key(prov):
+                logger.info(f"Fallback Active: Provider '{prov}' validated successfully. Reusing it for tasks.")
+                return prov
+
+        return None
 
     def _build_career_prompt(self, inputs: Dict[str, str]) -> str:
         """Build a structured prompt for career guide generation."""
@@ -177,12 +276,15 @@ Respond ONLY with valid JSON."""
             return None
 
     async def generate_with_selected_provider(self, prompt: str) -> Optional[Dict[str, Any]]:
-        """Generates response using the EXACT provider selected in settings.AI_PRIMARY_MODEL."""
-        provider = self.primary_model.lower()
-        
-        if not self.is_api_configured(provider):
-            logger.warning(f"AI Provider '{provider}' API Key is not configured. Falling back to mock data.")
+        """Generates response using the first validated working provider."""
+        provider = await self.get_active_validated_provider()
+        if not provider:
+            logger.warning("No working AI Provider API Key is validated. Falling back to mock data.")
+            self.last_used_model = "mock"
             return None
+
+        self.last_used_model = provider
+        logger.info(f"Using validated AI provider '{provider}' for task.")
 
         if provider == "gemini":
             return await self.generate_with_gemini(prompt)
@@ -340,6 +442,228 @@ Respond ONLY with valid JSON."""
             "ai_model_used": "mock",
         }
 
+    def generate_mock_college_predictions(self, colleges: List[Dict[str, Any]], criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Generate high-quality mock college predictions with highly dynamic match scores (30-99%) and reasons."""
+        scored_colleges = []
+
+        metropolitan_hubs = {"mumbai", "delhi", "new delhi", "bangalore", "bengaluru", "chennai", "kolkata", "noida", "pune"}
+        small_towns_t23 = {"pilani", "vellore", "tiruchirappalli", "trichy", "mangalore", "surathkal", "kanpur", "manipal"}
+
+        def _map_budget(budget: Optional[str]) -> float:
+            if not budget:
+                return 10000000.0
+            b_clean = budget.strip().lower()
+            if b_clean in ["free", "zero/self-taught", "zero", "self-taught"]:
+                return 10000.0
+            elif b_clean in ["low", "below 1l", "below 1 lakh"]:
+                return 100000.0
+            elif b_clean in ["medium", "1-5l", "1-5 lakh", "1 to 5l"]:
+                return 500000.0
+            elif b_clean in ["high", "5-10l", "5-10 lakh", "5 to 10l"]:
+                return 1000000.0
+            elif b_clean in ["premium", "above 10l", "above 10 lakh"]:
+                return 10000000.0
+            return 1000000.0
+
+        def _map_streams(pref_stream: Optional[str]) -> List[str]:
+            if not pref_stream:
+                return []
+            s_clean = pref_stream.strip().lower()
+            if "creative" in s_clean or "arts" in s_clean or "media" in s_clean:
+                return ["arts", "vocational"]
+            elif "tech" in s_clean or "it" in s_clean:
+                return ["science", "vocational"]
+            elif "health" in s_clean or "med" in s_clean:
+                return ["science"]
+            elif "business" in s_clean or "finance" in s_clean or "commerce" in s_clean:
+                return ["commerce"]
+            elif "engineer" in s_clean or "manufactur" in s_clean:
+                return ["science"]
+            elif "law" in s_clean or "policy" in s_clean:
+                return ["arts", "commerce"]
+            elif "trade" in s_clean or "vocational" in s_clean:
+                return ["vocational"]
+            if s_clean in ["science", "commerce", "arts", "vocational"]:
+                return [s_clean]
+            return [s_clean]
+
+        for c in colleges:
+            score = 45.0  # Dynamic base score
+            reasons = []
+
+            stream_penalty = 0.0
+            budget_penalty = 0.0
+            location_bonus_penalty = 0.0
+
+            # 1. Stream matching
+            pref_stream = criteria.get("preferred_stream")
+            if pref_stream and pref_stream.strip():
+                target_db_streams = _map_streams(pref_stream)
+                # Offered streams are passed down in c["offered_streams"]
+                offered_streams = [s.lower() for s in c.get("offered_streams", [])]
+                
+                # Check for match
+                has_match = any(ts in offered_streams for ts in target_db_streams)
+                if has_match:
+                    score += 25.0
+                    reasons.append(f"Offers your preferred stream ({pref_stream})")
+                else:
+                    stream_penalty = -25.0
+                    reasons.append(f"Stream mismatch (No {pref_stream} courses)")
+            else:
+                score += 15.0
+
+            # 2. Location matching
+            loc_pref = criteria.get("location")
+            if loc_pref and loc_pref.strip():
+                loc_clean = loc_pref.strip().lower()
+                c_city = (c.get("city") or "").lower()
+                c_state = (c.get("state") or "").lower()
+
+                if loc_clean in ["rural", "rural / small town"]:
+                    if c_city in metropolitan_hubs:
+                        location_bonus_penalty = -15.0
+                        reasons.append("Located in metropolitan hub (unlike rural preference)")
+                    elif c_city in small_towns_t23:
+                        location_bonus_penalty = 20.0
+                        reasons.append("Excellent non-metropolitan / small town campus environment")
+                    else:
+                        location_bonus_penalty = 5.0
+                elif loc_clean in ["major_hub", "major tech/business hub"]:
+                    if c_city in metropolitan_hubs:
+                        location_bonus_penalty = 20.0
+                        reasons.append("Great location for metropolitan corporate networking")
+                    else:
+                        location_bonus_penalty = 5.0
+                elif loc_clean in ["mid_city", "mid-sized city"]:
+                    if c_city in small_towns_t23 or c_city in ["pune", "noida"]:
+                        location_bonus_penalty = 20.0
+                        reasons.append(f"Convenient campus location in mid-sized {c.get('city')}")
+                    else:
+                        location_bonus_penalty = 5.0
+                elif loc_clean in ["remote", "100% remote", "nomad", "global/nomad"]:
+                    location_bonus_penalty = 12.0
+                    reasons.append("Flexible location matching your remote/nomad preferences")
+                elif loc_clean in ["any", "any india"]:
+                    location_bonus_penalty = 12.0
+                    reasons.append(f"Convenient campus location in {c.get('city')}")
+                else:
+                    if loc_clean in c_city or loc_clean in c_state:
+                        location_bonus_penalty = 20.0
+                        reasons.append(f"Located directly in your preferred location ({c.get('city')})")
+                    else:
+                        location_bonus_penalty = 4.0
+                        reasons.append(f"National exposure outside your preferred location")
+            else:
+                location_bonus_penalty = 10.0
+                reasons.append(f"Convenient campus location in {c.get('city')}")
+
+            score += location_bonus_penalty
+
+            # 3. Placement rate matching
+            if c.get("placement_rate"):
+                rate = float(c["placement_rate"])
+                score += (rate / 100) * 12
+                if rate > 80 and len(reasons) < 3:
+                    reasons.append(f"Stellar campus placements: {rate}% placement rate")
+
+            # 4. NIRF Rank matching
+            rank = c.get("nirf_rank")
+            if rank:
+                rank_int = int(rank)
+                if rank_int <= 100:
+                    score += (100 - rank_int) / 100 * 8
+                    if rank_int <= 10 and len(reasons) < 3:
+                        reasons.append(f"Highly prestigious National Rank (NIRF #{rank_int})")
+                elif rank_int <= 500:
+                    score += 3
+            
+            # 5. Fee matching
+            budget_pref = criteria.get("budget_range")
+            if budget_pref and c.get("fee_range_max"):
+                max_budget = _map_budget(budget_pref)
+                fee_max = float(c["fee_range_max"])
+                if fee_max <= max_budget:
+                    score += 15.0
+                    if len(reasons) < 3:
+                        reasons.append("Comfortably within your preferred budget range")
+                elif fee_max <= max_budget * 1.5:
+                    score += 5.0
+                else:
+                    budget_penalty = -30.0
+                    reasons.append("Fees exceed your target budget range")
+            else:
+                score += 8.0
+
+            # Compute final compatibility score
+            final_score = score + stream_penalty + budget_penalty
+
+            # Apply multiplier scaling for severe misfits to drop compatibility down to 30-55%
+            if stream_penalty < 0:
+                final_score *= 0.60
+            if budget_penalty < 0:
+                final_score *= 0.65
+            if location_bonus_penalty < 0:
+                final_score *= 0.85
+
+            final_score = max(30.0, min(round(final_score, 1), 99.0))
+            
+            scored_colleges.append({
+                "college_id": c["id"],
+                "match_score": int(final_score),
+                "match_reasons": reasons[:3]
+            })
+
+        scored_colleges.sort(key=lambda x: x["match_score"], reverse=True)
+        return scored_colleges
+
+    def generate_mock_career_predictions(self, careers: List[Dict[str, Any]], criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Generate high-quality mock career predictions with match scores and reasons when LLM fails."""
+        scored_careers = []
+        for c in careers:
+            score = 55.0  # Base mock AI score
+            reasons = []
+            
+            pref_stream = criteria.get("preferred_stream")
+            if pref_stream and c.get("stream") and pref_stream.lower() in c["stream"].lower():
+                reasons.append(f"Aligned with {c['stream']} stream")
+                score += 20.0
+                
+            interests = criteria.get("interests")
+            if interests:
+                words = [w.strip().lower() for w in interests.split(",") if w.strip()]
+                matched = []
+                for w in words:
+                    if w in c["title"].lower() or w in c.get("category", "").lower():
+                        matched.append(w)
+                if matched:
+                    reasons.append(f"Matches interest in {', '.join(matched)}")
+                    score += 15.0
+                else:
+                    reasons.append(f"Complementary to interest areas")
+                    score += 5.0
+            else:
+                reasons.append("Versatile fit for diverse interests")
+                score += 5.0
+                
+            if c.get("demand_level") == "High":
+                reasons.append("High-growth industry demand")
+                score += 10.0
+                
+            if c.get("average_salary_entry") and int(c["average_salary_entry"]) > 600000:
+                reasons.append("Lucrative entry-level compensation package")
+                score += 8.0
+                
+            score = min(score, 99.0)
+            scored_careers.append({
+                "career_id": c["id"],
+                "match_score": int(score),
+                "match_reasons": reasons[:3]
+            })
+            
+        scored_careers.sort(key=lambda x: x["match_score"], reverse=True)
+        return scored_careers
+
     async def predict_college_matches(self, colleges: List[Dict[str, Any]], criteria: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
         """Use the selected LLM to rank and score colleges based on criteria."""
         college_list_str = "\n".join([
@@ -377,7 +701,10 @@ Respond ONLY with valid JSON."""
             return result
         elif isinstance(result, dict) and "matches" in result:
             return result["matches"]
-        return None
+            
+        # Fallback to high-quality mock predictions if API key is invalid/placeholder/fails
+        logger.warning("predict_college_matches LLM call failed or key is placeholder. Generating high-quality mock predictions.")
+        return self.generate_mock_college_predictions(colleges, criteria)
 
     async def predict_career_matches(self, careers: List[Dict[str, Any]], criteria: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
         """Use the selected LLM to rank and score careers based on criteria."""
@@ -416,7 +743,10 @@ Respond ONLY with valid JSON."""
             return result
         elif isinstance(result, dict) and "matches" in result:
             return result["matches"]
-        return None
+            
+        # Fallback to high-quality mock predictions if API key is invalid/placeholder/fails
+        logger.warning("predict_career_matches LLM call failed or key is placeholder. Generating high-quality mock predictions.")
+        return self.generate_mock_career_predictions(careers, criteria)
 
 
 # Singleton instance

@@ -27,24 +27,92 @@ INSERT IGNORE INTO colleges (name, slug, university, type, city, state, country,
 ('APS College of Arts and Science', 'aps-college', 'Bangalore University', 'private', 'Bangalore', 'Karnataka', 'India', 1995, 'NAAC B+', NULL, 70.0, 4.0, 12.0, 50000, 100000);
 
 -- Sample courses for first few colleges
+-- Sample courses for first few colleges
 INSERT IGNORE INTO college_courses (college_id, course_name, degree_type, duration_years, stream, annual_fee) VALUES
+-- College 1: IIT Bombay
 (1, 'B.Tech Computer Science', 'UG', 4, 'science', 220000),
 (1, 'B.Tech Electrical Engineering', 'UG', 4, 'science', 220000),
 (1, 'M.Tech AI & ML', 'PG', 2, 'science', 220000),
+-- College 2: IIT Delhi
 (2, 'B.Tech Computer Science', 'UG', 4, 'science', 225000),
 (2, 'B.Tech Mechanical Engineering', 'UG', 4, 'science', 225000),
+-- College 3: IISc Bangalore
 (3, 'B.Sc Research', 'UG', 4, 'science', 150000),
 (3, 'M.Tech Computer Science', 'PG', 2, 'science', 180000),
+-- College 4: IIT Madras
+(4, 'B.Tech Computer Science', 'UG', 4, 'science', 210000),
+(4, 'B.Tech Aerospace Engineering', 'UG', 4, 'science', 210000),
+-- College 5: IIT Kanpur
+(5, 'B.Tech Computer Science', 'UG', 4, 'science', 215000),
+(5, 'B.Tech Chemical Engineering', 'UG', 4, 'science', 215000),
+-- College 6: BITS Pilani
 (6, 'B.E. Computer Science', 'UG', 4, 'science', 450000),
 (6, 'B.E. Electronics', 'UG', 4, 'science', 450000),
+(6, 'M.Sc Economics', 'PG', 2, 'commerce', 350000),
+-- College 7: NIT Karnataka Surathkal
+(7, 'B.Tech Computer Science', 'UG', 4, 'science', 150000),
+(7, 'B.Tech Information Technology', 'UG', 4, 'science', 150000),
+-- College 8: VIT Vellore
 (8, 'B.Tech Computer Science', 'UG', 4, 'science', 350000),
 (8, 'BCA', 'UG', 3, 'science', 200000),
 (8, 'B.Com', 'UG', 3, 'commerce', 150000),
+(8, 'B.Sc Physics', 'UG', 3, 'science', 120000),
+-- College 9: SRM Chennai
+(9, 'B.Tech Computer Science', 'UG', 4, 'science', 250000),
+(9, 'B.Com General', 'UG', 3, 'commerce', 120000),
+(9, 'B.A. Journalism', 'UG', 3, 'arts', 100000),
+-- College 10: Christ University
 (10, 'BCA', 'UG', 3, 'science', 150000),
-(10, 'BBA', 'UG', 3, 'commerce', 120000),
-(10, 'B.A. Psychology', 'UG', 3, 'arts', 100000),
+(10, 'BBA Finance', 'UG', 3, 'commerce', 180000),
+(10, 'B.Com Honors', 'UG', 3, 'commerce', 150000),
+(10, 'B.A. Psychology', 'UG', 3, 'arts', 110000),
+(10, 'B.A. English Literature', 'UG', 3, 'arts', 100000),
+-- College 11: Manipal MIT
+(11, 'B.Tech Computer Science', 'UG', 4, 'science', 350000),
+(11, 'B.Arch', 'UG', 5, 'vocational', 300000),
+-- College 12: NIT Trichy
+(12, 'B.Tech Computer Science', 'UG', 4, 'science', 150000),
+(12, 'B.Tech ECE', 'UG', 4, 'science', 150000),
+-- College 13: Delhi University
+(13, 'B.A. English Honors', 'UG', 3, 'arts', 45000),
+(13, 'B.A. Political Science', 'UG', 3, 'arts', 45000),
+(13, 'B.A. Economics Honors', 'UG', 3, 'commerce', 55000),
+(13, 'B.Com Honors', 'UG', 3, 'commerce', 60000),
+(13, 'B.Sc Physics', 'UG', 3, 'science', 70000),
+(13, 'B.Sc Mathematics', 'UG', 3, 'science', 65000),
+-- College 14: Amity Noida
+(14, 'B.A. Journalism & Mass Comm', 'UG', 3, 'arts', 180000),
+(14, 'B.A. Applied Psychology', 'UG', 3, 'arts', 150000),
+(14, 'B.Com Finance', 'UG', 3, 'commerce', 160000),
+(14, 'B.Tech CSE', 'UG', 4, 'science', 320000),
+(14, 'BCA', 'UG', 3, 'science', 180000),
+-- College 15: Symbiosis Pune
+(15, 'BBA', 'UG', 3, 'commerce', 250000),
+(15, 'B.Com General', 'UG', 3, 'commerce', 150000),
+(15, 'B.A. Liberal Arts', 'UG', 3, 'arts', 200000),
+(15, 'B.A. LL.B.', 'UG', 5, 'arts', 280000),
+-- College 16: PES University
+(16, 'B.Tech Computer Science', 'UG', 4, 'science', 380000),
+(16, 'BCA', 'UG', 3, 'science', 200000),
+(16, 'BBA', 'UG', 3, 'commerce', 220000),
+(16, 'B.Des Product Design', 'UG', 4, 'vocational', 350000),
+-- College 17: RV College of Engineering
+(17, 'B.Tech Computer Science', 'UG', 4, 'science', 280000),
+(17, 'B.Tech Information Science', 'UG', 4, 'science', 260000),
+-- College 18: BMS College of Engineering
+(18, 'B.Tech Computer Science', 'UG', 4, 'science', 220000),
+(18, 'B.Tech Mechanical Engineering', 'UG', 4, 'science', 200000),
+-- College 19: Jadavpur University
+(19, 'B.A. Comparative Literature', 'UG', 3, 'arts', 30000),
+(19, 'B.A. History', 'UG', 3, 'arts', 25000),
+(19, 'B.Sc Physics', 'UG', 3, 'science', 40000),
+(19, 'B.Tech Computer Science', 'UG', 4, 'science', 50000),
+-- College 20: APS College of Arts and Science
+(20, 'B.A. History, Economics, Political Science', 'UG', 3, 'arts', 45000),
+(20, 'B.A. Psychology', 'UG', 3, 'arts', 50000),
+(20, 'B.Sc Physics, Chemistry, Maths', 'UG', 3, 'science', 60000),
 (20, 'BCA', 'UG', 3, 'science', 75000),
-(20, 'B.Com', 'UG', 3, 'commerce', 60000),
+(20, 'B.Com General', 'UG', 3, 'commerce', 60000),
 (20, 'BBA', 'UG', 3, 'commerce', 70000);
 
 -- College scores
