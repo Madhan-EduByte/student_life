@@ -24,6 +24,29 @@ class RoadmapService:
         self, db: Session, user_id: int, career_inputs: Dict[str, str]
     ) -> Roadmap:
         """Generate a new AI career roadmap for a student."""
+        # Filter inputs to avoid TypeError when creating profile and to map keys if needed
+        allowed_keys = {
+            "interest_areas", "strengths", "preferred_stream", "education_level",
+            "budget_range", "location_preference", "work_life_balance",
+            "risk_tolerance", "interaction_style"
+        }
+        
+        # Ensure we map any frontend aliases if they exist (though schemas validator should have done it)
+        mapped_inputs = career_inputs.copy()
+        if "interests" in mapped_inputs and not mapped_inputs.get("interest_areas"):
+            val = mapped_inputs["interests"]
+            mapped_inputs["interest_areas"] = ", ".join(val) if isinstance(val, list) else str(val)
+        if "strengths" in mapped_inputs and isinstance(mapped_inputs["strengths"], list):
+            mapped_inputs["strengths"] = ", ".join(mapped_inputs["strengths"])
+        if "industry_stream" in mapped_inputs and not mapped_inputs.get("preferred_stream"):
+            mapped_inputs["preferred_stream"] = mapped_inputs["industry_stream"]
+        if "budget" in mapped_inputs and not mapped_inputs.get("budget_range"):
+            mapped_inputs["budget_range"] = mapped_inputs["budget"]
+        if "location" in mapped_inputs and not mapped_inputs.get("location_preference"):
+            mapped_inputs["location_preference"] = mapped_inputs["location"]
+
+        filtered_inputs = {k: v for k, v in mapped_inputs.items() if k in allowed_keys}
+
         # Update student profile with career inputs
         profile = (
             db.query(StudentProfile)
@@ -31,14 +54,11 @@ class RoadmapService:
             .first()
         )
         if profile:
-            profile.interest_areas = career_inputs.get("interest_areas")
-            profile.strengths = career_inputs.get("strengths")
-            profile.preferred_stream = career_inputs.get("preferred_stream")
-            profile.education_level = career_inputs.get("education_level")
-            profile.budget_range = career_inputs.get("budget_range")
-            profile.location_preference = career_inputs.get("location_preference")
+            for k, v in filtered_inputs.items():
+                if v is not None:
+                    setattr(profile, k, v)
         else:
-            profile = StudentProfile(user_id=user_id, **career_inputs)
+            profile = StudentProfile(user_id=user_id, **filtered_inputs)
             db.add(profile)
 
         # Deactivate previous roadmaps
@@ -166,7 +186,6 @@ class RoadmapService:
         )
         db.add(history)
 
-        # Regenerate with current data
         career_inputs = {
             "interest_areas": profile.interest_areas or "",
             "strengths": profile.strengths or "",
@@ -174,6 +193,9 @@ class RoadmapService:
             "education_level": profile.education_level or "",
             "budget_range": profile.budget_range or "",
             "location_preference": profile.location_preference or "",
+            "work_life_balance": profile.work_life_balance or "",
+            "risk_tolerance": profile.risk_tolerance or "",
+            "interaction_style": profile.interaction_style or "",
         }
 
         ai_result = await ai_service.generate_roadmap(career_inputs)

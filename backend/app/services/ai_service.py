@@ -22,7 +22,7 @@ class AIService:
 
     def _build_career_prompt(self, inputs: Dict[str, str]) -> str:
         """Build a structured prompt for career roadmap generation."""
-        return f"""You are DestinAI, an expert AI career counselor. Based on the following 6 inputs from a student, generate a comprehensive, personalized career roadmap.
+        return f"""You are DestinAI, an expert AI career counselor. Based on the following inputs from a student, generate a comprehensive, personalized career roadmap.
 
 ## Student Inputs:
 1. **Interest Areas:** {inputs.get('interest_areas', 'Not specified')}
@@ -31,6 +31,9 @@ class AIService:
 4. **Education Level:** {inputs.get('education_level', 'Not specified')}
 5. **Budget Range:** {inputs.get('budget_range', 'Not specified')}
 6. **Location Preference:** {inputs.get('location_preference', 'Not specified')}
+7. **Work-Life Balance Preference:** {inputs.get('work_life_balance', 'Not specified')}
+8. **Risk Tolerance:** {inputs.get('risk_tolerance', 'Not specified')}
+9. **Daily Interaction Style:** {inputs.get('interaction_style', 'Not specified')}
 
 ## Generate the following in JSON format:
 {{

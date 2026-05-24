@@ -9,8 +9,8 @@ def test_generate_roadmap(client, test_user_data, test_career_inputs):
     client.post("/api/v1/auth/register", json=test_user_data)
     login_response = client.post(
         "/api/v1/auth/login",
-        json={
-            "email": test_user_data["email"],
+        data={
+            "username": test_user_data["email"],
             "password": test_user_data["password"],
         },
     )
@@ -46,8 +46,8 @@ def test_list_roadmaps(client, test_user_data):
     client.post("/api/v1/auth/register", json=test_user_data)
     login_response = client.post(
         "/api/v1/auth/login",
-        json={
-            "email": test_user_data["email"],
+        data={
+            "username": test_user_data["email"],
             "password": test_user_data["password"],
         },
     )

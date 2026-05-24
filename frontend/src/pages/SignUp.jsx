@@ -11,6 +11,10 @@ import useAuth from '../hooks/useAuth';
 import useAuthStore from '../store/authStore';
 
 function getSignUpErrorMessage(err) {
+  if (err instanceof Error && err.message && !err.response) {
+    return err.message;
+  }
+
   const detail = err?.response?.data?.detail;
 
   if (typeof detail === 'string') {
@@ -156,6 +160,15 @@ function SignUp() {
         password: formData.password,
         phone: formData.phone || null,
         role: 'student',
+        interest_areas: Array.isArray(careerProfile.interests) ? careerProfile.interests.join(', ') : (careerProfile.interests || ''),
+        strengths: Array.isArray(careerProfile.strengths) ? careerProfile.strengths.join(', ') : (careerProfile.strengths || ''),
+        preferred_stream: careerProfile.industry_stream || '',
+        education_level: careerProfile.education_level || '',
+        budget_range: careerProfile.budget || '',
+        location_preference: careerProfile.location || '',
+        work_life_balance: careerProfile.work_life_balance || '',
+        risk_tolerance: careerProfile.risk_tolerance || '',
+        interaction_style: careerProfile.interaction_style || '',
       });
 
       // Login to authenticate and get the token
@@ -164,7 +177,7 @@ function SignUp() {
         throw new Error(loginResult.error || 'Failed to auto-login after registration');
       }
 
-      // Save career profile
+      // Save career profile and trigger initial AI roadmap generation
       let token = localStorage.getItem('access_token');
       if (!token) {
         const authState = useAuthStore.getState();
@@ -172,6 +185,7 @@ function SignUp() {
       }
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
       
+      // Update profile inputs in the database
       await fetch(`${baseUrl}/students/profile`, {
         method: 'PUT',
         headers: {
@@ -181,7 +195,29 @@ function SignUp() {
         body: JSON.stringify(careerProfile),
       });
 
-      setSuccess('✅ Account created successfully!');
+      // Call initial AI Roadmap generation
+      await fetch(`${baseUrl}/roadmap/generate`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          career_inputs: {
+            interest_areas: careerProfile.interests,
+            strengths: careerProfile.strengths,
+            preferred_stream: careerProfile.industry_stream,
+            education_level: careerProfile.education_level,
+            budget_range: careerProfile.budget,
+            location_preference: careerProfile.location,
+            work_life_balance: careerProfile.work_life_balance || '',
+            risk_tolerance: careerProfile.risk_tolerance || '',
+            interaction_style: careerProfile.interaction_style || '',
+          }
+        }),
+      });
+
+      setSuccess('✅ Account created and career roadmap generated!');
       setFormData({
         full_name: '',
         email: '',

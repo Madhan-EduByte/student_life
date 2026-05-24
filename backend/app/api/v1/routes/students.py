@@ -79,7 +79,7 @@ async def update_profile(
         profile = StudentProfile(user_id=current_user.id)
         db.add(profile)
 
-    update_data = profile_data.model_dump(exclude_unset=True)
+    update_data = profile_data.model_dump(exclude_unset=True, exclude={"interests", "industry_stream", "budget", "location"})
     for key, value in update_data.items():
         setattr(profile, key, value)
 
