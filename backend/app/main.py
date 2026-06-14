@@ -26,7 +26,17 @@ async def lifespan(app: FastAPI):
     logger.info(f"🚀 Starting {settings.APP_NAME} v1.0.0")
     logger.info(f"   Environment: {settings.APP_ENV}")
     logger.info(f"   Debug: {settings.APP_DEBUG}")
-    logger.info(f"   AI Primary Model: {settings.AI_PRIMARY_MODEL}")
+    
+    primary = settings.AI_PRIMARY_MODEL.lower()
+    logger.info(f"   AI Primary Model: {primary}")
+    
+    SUPPORTED_PROVIDERS = {"gemini", "openai", "meta", "perplexity", "grok", "deepseek"}
+    if primary not in SUPPORTED_PROVIDERS:
+        logger.warning(
+            f"⚠️ Unsupported AI primary provider '{primary}' configured in LLL_PROVIDER. "
+            f"Supported providers are: {sorted(list(SUPPORTED_PROVIDERS))}. "
+            f"The app will fall back to mock data unless a valid provider is configured."
+        )
     yield
     logger.info(f"🛑 Shutting down {settings.APP_NAME}")
 

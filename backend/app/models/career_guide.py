@@ -36,6 +36,7 @@ class CareerGuide(Base):
     future_proof_score = Column(Float, nullable=True)  # 0-100
     ai_model_used = Column(String(50), nullable=True)  # gemini / openai
     raw_ai_response = Column(Text, nullable=True)  # Full AI response JSON
+    alternative_careers = Column(Text, nullable=True)  # JSON array of alternative career paths
     version = Column(Integer, default=1, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     next_update_at = Column(DateTime, nullable=True)  # Auto-update every 6 months

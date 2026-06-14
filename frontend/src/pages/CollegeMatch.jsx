@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Navigate } from 'react-router-dom';
-import { HiSearch, HiFilter, HiAcademicCap, HiSortAscending, HiChevronLeft, HiChevronRight, HiSparkles } from 'react-icons/hi';
+import { HiSearch, HiFilter, HiAcademicCap, HiSortAscending, HiChevronLeft, HiChevronRight, HiChevronDoubleLeft, HiChevronDoubleRight, HiSparkles } from 'react-icons/hi';
 import CollegeCard from '../components/college/CollegeCard';
 import Input from '../components/common/Input';
 import collegeService from '../services/collegeService';
@@ -24,13 +24,42 @@ function CollegeMatch() {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const token = useAuthStore((state) => state.accessToken || state.access_token);
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
   // Fetch matched colleges from API on component mount
   useEffect(() => {
     const fetchMatches = async () => {
       try {
         setLoading(true);
-        const response = await collegeService.getMatches();
+        
+        // First, fetch student profile if authenticated
+        let criteria = {};
+        if (token) {
+          try {
+            const profRes = await fetch(`${baseUrl}/students/profile`, { 
+              headers: { Authorization: `Bearer ${token}` } 
+            });
+            if (profRes.ok) {
+              const profData = await profRes.json();
+              setProfile(profData);
+              // Extract criteria from profile
+              if (profData.location_preference || profData.budget_range || profData.preferred_stream) {
+                criteria = {
+                  location: profData.location_preference || '',
+                  budget_range: profData.budget_range || '',
+                  preferred_stream: profData.preferred_stream || ''
+                };
+              }
+            }
+          } catch (err) {
+            console.error('Failed to fetch profile:', err);
+          }
+        }
+        
+        // Then fetch college matches with criteria
+        const response = await collegeService.getMatches(criteria);
         // Backend now returns { matches: [...], ai_active: bool, ai_model: str }
         if (response.data && response.data.matches) {
           setMatches(response.data.matches);
@@ -55,7 +84,7 @@ function CollegeMatch() {
     };
 
     fetchMatches();
-  }, []);
+  }, [token]);
 
   // Reset page on search or filter change
   useEffect(() => {
@@ -112,6 +141,16 @@ function CollegeMatch() {
     (currentPage - 1) * cardsPerPage,
     currentPage * cardsPerPage
   );
+
+  // Determine block-based page numbers (9 pages per block)
+  const maxVisiblePages = 9;
+  const currentBlock = Math.floor((currentPage - 1) / maxVisiblePages);
+  const startPage = currentBlock * maxVisiblePages + 1;
+  const endPage = Math.min(startPage + maxVisiblePages - 1, totalPages);
+  const pageNumbers = [];
+  for (let i = startPage; i <= endPage; i++) {
+    pageNumbers.push(i);
+  }
 
   return (
     <div className="min-h-screen pt-24 pb-16" id="college-match-page">
@@ -254,34 +293,111 @@ function CollegeMatch() {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-8">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
-                    currentPage === 1
-                      ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
-                      : 'border-white/10 bg-white/5 hover:border-primary-500/20 text-white'
-                  }`}
-                >
-                  <HiChevronLeft size={16} />
-                </button>
+              <div className="flex flex-col justify-center items-center gap-4 mt-12 border-t border-white/5 pt-8 w-full">
+                {/* Page details on their own separate line */}
+                <div className="text-xs text-surface-400 font-semibold font-mono text-center">
+                  Showing Page <span className="text-white font-bold">{currentPage}</span> of <span className="text-surface-300 font-bold">{totalPages}</span> ({sortedMatches.length} total colleges)
+                </div>
                 
-                <span className="text-xs text-surface-400 font-semibold font-mono">
-                  Page <span className="text-white font-bold">{currentPage}</span> of {totalPages}
-                </span>
+                {/* Button strip */}
+                <div className="flex justify-center items-center gap-2 flex-wrap">
+                  {/* Double Left Arrow (Skip 10 Pages) */}
+                  <button
+                    onClick={() => handlePageChange(Math.max(currentPage - 10, 1))}
+                    disabled={currentPage === 1}
+                    className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
+                      currentPage === 1
+                        ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
+                        : 'border-white/10 bg-white/5 hover:border-primary-500/20 text-white hover:bg-white/10 active:scale-95'
+                    }`}
+                    title="Skip 10 Pages Back"
+                  >
+                    <HiChevronDoubleLeft size={16} />
+                  </button>
 
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
-                    currentPage === totalPages
-                      ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
-                      : 'border-white/10 bg-white/5 hover:border-primary-500/20 text-white'
-                  }`}
-                >
-                  <HiChevronRight size={16} />
-                </button>
+                  {/* Previous Page Button */}
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
+                      currentPage === 1
+                        ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
+                        : 'border-white/10 bg-white/5 hover:border-primary-500/20 text-white hover:bg-white/10 active:scale-95'
+                    }`}
+                    title="Previous Page"
+                  >
+                    <HiChevronLeft size={16} />
+                  </button>
+                  
+                  {/* Block Pagination Jump Prev (if startPage > 1) */}
+                  {startPage > 1 && (
+                    <>
+                      <button
+                        onClick={() => handlePageChange(1)}
+                        className="w-10 h-10 rounded-lg border border-white/10 bg-white/5 text-xs font-bold font-mono text-surface-400 hover:text-white hover:border-white/20 active:scale-95 transition-all"
+                      >
+                        1
+                      </button>
+                      <span className="text-surface-600 text-xs px-1 select-none font-mono">...</span>
+                    </>
+                  )}
+
+                  {/* Page Numbers Block */}
+                  {pageNumbers.map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`w-10 h-10 rounded-lg border text-xs font-bold font-mono transition-all active:scale-95 ${
+                        currentPage === page
+                          ? 'bg-primary-600/20 text-primary-300 border-primary-500/50 shadow-[0_0_15px_rgba(59,130,246,0.15)] font-extrabold'
+                          : 'border-white/10 bg-white/5 text-surface-400 hover:text-white hover:border-white/20'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+
+                  {/* Block Pagination Jump Next (if endPage < totalPages) */}
+                  {endPage < totalPages && (
+                    <>
+                      <span className="text-surface-600 text-xs px-1 select-none font-mono">...</span>
+                      <button
+                        onClick={() => handlePageChange(totalPages)}
+                        className="w-10 h-10 rounded-lg border border-white/10 bg-white/5 text-xs font-bold font-mono text-surface-400 hover:text-white hover:border-white/20 active:scale-95 transition-all"
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+
+                  {/* Next Page Button */}
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
+                      currentPage === totalPages
+                        ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
+                        : 'border-white/10 bg-white/5 hover:border-primary-500/20 text-white hover:bg-white/10 active:scale-95'
+                    }`}
+                    title="Next Page"
+                  >
+                    <HiChevronRight size={16} />
+                  </button>
+
+                  {/* Double Right Arrow (Skip 10 Pages) */}
+                  <button
+                    onClick={() => handlePageChange(Math.min(currentPage + 10, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
+                      currentPage === totalPages
+                        ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
+                        : 'border-white/10 bg-white/5 hover:border-primary-500/20 text-white hover:bg-white/10 active:scale-95'
+                    }`}
+                    title="Skip 10 Pages Forward"
+                  >
+                    <HiChevronDoubleRight size={16} />
+                  </button>
+                </div>
               </div>
             )}
           </div>

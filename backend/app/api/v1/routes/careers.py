@@ -144,24 +144,58 @@ async def match_careers(
     matches = []
     pref_stream = criteria.get("preferred_stream", "").lower()
     interest_words = [w.strip().lower() for w in criteria.get("interests", "").split(",") if w.strip()]
+    strength_words = [w.strip().lower() for w in criteria.get("strengths", "").split(",") if w.strip()]
 
     for c in all_careers:
-        score = 50.0
+        score = 40.0  # Lower base for better differentiation
         reasons = []
 
-        # Stream compatibility (up to 25 points)
+        # Stream compatibility (30 points max)
         if pref_stream and c.stream and pref_stream in c.stream.lower():
-            score += 25.0
-            reasons.append(f"Aligned with your stream preference ({c.stream})")
+            score += 30.0
+            reasons.append(f"Aligned with {c.stream} stream")
 
-        # Interest matches (up to 25 points)
+        # Interest matches (25 points max)
         matched_interests = []
         for word in interest_words:
             if word in (c.title or "").lower() or word in (c.description or "").lower() or word in (c.category or "").lower():
                 matched_interests.append(word)
         if matched_interests:
-            score += min(len(matched_interests) * 10, 25)
-            reasons.append(f"Matches interests: {', '.join(matched_interests)}")
+            score += min(len(matched_interests) * 12, 25)
+            reasons.append(f"Matches your interests: {', '.join(matched_interests)}")
+        elif interest_words:
+            # Has interests but no match - slight penalty
+            score += 3.0
+
+        # Strength matches (20 points max)
+        matched_strengths = []
+        for word in strength_words:
+            if word in (c.title or "").lower() or word in (c.category or "").lower():
+                matched_strengths.append(word)
+        if matched_strengths:
+            score += min(len(matched_strengths) * 10, 20)
+            reasons.append(f"Leverages your strengths: {', '.join(matched_strengths)}")
+
+        # Demand level scoring (10 points)
+        if c.demand_level:
+            demand_lower = c.demand_level.lower()
+            if demand_lower == "high":
+                score += 10.0
+                if "High-growth" not in str(reasons):
+                    reasons.append("High-growth industry demand")
+            elif demand_lower == "medium":
+                score += 5.0
+
+        # Salary bonus (8 points)
+        if c.average_salary_entry and c.average_salary_entry > 600000:
+            score += 8.0
+            reasons.append("Lucrative entry-level compensation")
+
+        # Growth rate bonus (5 points)
+        if c.growth_rate and c.growth_rate > 15.0:
+            score += 5.0
+            if "Strong career growth" not in str(reasons):
+                reasons.append("Strong career growth potential")
 
         if not reasons:
             reasons.append("Good overall career fit")
@@ -169,7 +203,7 @@ async def match_careers(
         matches.append({
             "career": CareerResponse.model_validate(c),
             "match_score": min(score, 100.0),
-            "match_reasons": reasons,
+            "match_reasons": reasons[:3],
             "ai_predict_order": None,
         })
 

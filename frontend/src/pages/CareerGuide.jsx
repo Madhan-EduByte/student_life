@@ -124,10 +124,7 @@ function CareerGuide() {
   const user = useAuthStore(state => state.user);
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
-  if (user?.role === 'admin') {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
+  // All hooks MUST come before any conditional returns (React Rules of Hooks)
   const [careerGuide, setCareerGuide] = useState(demoCareerGuide);
   const [profile, setProfile] = useState(demoProfile);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -155,7 +152,8 @@ function CareerGuide() {
         const profRes = await fetch(`${baseUrl}/students/profile`, { headers: { Authorization: `Bearer ${token}` } });
         if (profRes.ok) {
           const profData = await profRes.json();
-          fetchedProfile = profData.profile || profData.data || profData;
+          // The API returns a direct StudentProfileResponse (no wrapper)
+          fetchedProfile = profData;
           console.log('📋 Profile data received:', fetchedProfile);
           setProfile(fetchedProfile);
           
@@ -166,11 +164,17 @@ function CareerGuide() {
         } else {
           console.warn('⚠️ Profile fetch failed with status:', profRes.status);
         }
-        // Fetch CareerGuide
+        // Fetch CareerGuide — find the active one
         const rmRes = await fetch(`${baseUrl}/career-guide`, { headers: { Authorization: `Bearer ${token}` } });
         if (rmRes.ok) {
           const rmData = await rmRes.json();
-          const active = Array.isArray(rmData) ? rmData[0] : (rmData.careerGuides ? rmData.careerGuides[0] : rmData);
+          const allGuides = Array.isArray(rmData)
+            ? rmData
+            : (rmData.career_guides || rmData.careerGuides || []);
+
+          // Prefer the is_active guide; otherwise fall back to the most recently created
+          const active = allGuides.find(g => g.is_active) || allGuides[0];
+
           if (active && active.title) {
             setCareerGuide(active);
           } else {
@@ -217,9 +221,12 @@ function CareerGuide() {
     fetchData();
   }, [baseUrl, token]);
 
-  // Save edited profile inputs
+  // Admin redirect must come AFTER all hooks
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
   const handleSaveProfile = async () => {
-    setProfile(careerProfile); // Optimistic UI update
     setIsEditModalOpen(false);
     
     try {
@@ -231,15 +238,21 @@ function CareerGuide() {
           body: JSON.stringify(careerProfile)
         });
         
+        let latestProfile = careerProfile;
         if (res.ok) {
-          const updatedProfileData = await res.json();
-          const updatedProfile = updatedProfileData.profile || updatedProfileData.data || updatedProfileData;
-          console.log('✅ Profile updated:', updatedProfile);
+          // The API returns a direct StudentProfileResponse (no .profile or .data wrapper)
+          const updatedProfile = await res.json();
+          console.log('✅ Profile updated successfully:', updatedProfile);
           setProfile(updatedProfile);
-          setCareerProfile(mapBackendToCareerProfile(updatedProfile));
+          // Map the backend response back to frontend careerProfile format
+          latestProfile = mapBackendToCareerProfile(updatedProfile);
+          setCareerProfile(latestProfile);
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          console.error('❌ Profile update failed:', res.status, errData);
         }
-        // Automatically generate a new careerGuide based on updated answers
-        await handleUpdateCareerGuide();
+        // Automatically generate a new careerGuide based on updated profile
+        await handleUpdateCareerGuide(latestProfile);
       } else {
         // If not logged in, simulate AI generation delay & update local mock state dynamically
         setGenerating(true);
@@ -291,20 +304,24 @@ function CareerGuide() {
   };
 
   // Request new AI CareerGuide generation
-  const handleUpdateCareerGuide = async () => {
+  const handleUpdateCareerGuide = async (profileToUse = careerProfile) => {
     setGenerating(true);
-    
+
+    // Send frontend-format field names — the backend schema maps these correctly
+    // Using the same key names as careerProfile state for consistency
     const payload = {
-      interest_areas: careerProfile.interests,
-      strengths: careerProfile.strengths,
-      preferred_stream: careerProfile.industry_stream,
-      education_level: careerProfile.education_level,
-      budget_range: careerProfile.budget,
-      location_preference: careerProfile.location,
-      work_life_balance: careerProfile.work_life_balance,
-      risk_tolerance: careerProfile.risk_tolerance,
-      interaction_style: careerProfile.interaction_style,
+      interests: Array.isArray(profileToUse.interests) ? profileToUse.interests : parseStringOrArray(profileToUse.interests),
+      strengths: Array.isArray(profileToUse.strengths) ? profileToUse.strengths : parseStringOrArray(profileToUse.strengths),
+      industry_stream: profileToUse.industry_stream,
+      education_level: profileToUse.education_level,
+      budget: profileToUse.budget,
+      location: profileToUse.location,
+      work_life_balance: profileToUse.work_life_balance,
+      risk_tolerance: profileToUse.risk_tolerance,
+      interaction_style: profileToUse.interaction_style,
     };
+
+    console.log('🚀 Sending career guide generate request with:', payload);
 
     try {
       const res = await fetch(`${baseUrl}/career-guide/generate`, {
@@ -314,16 +331,61 @@ function CareerGuide() {
       });
       if (res.ok) {
         const newCareerGuide = await res.json();
+        console.log('✅ Career guide updated:', newCareerGuide);
         setCareerGuide(newCareerGuide);
       } else {
-        // Optimistic visual update if backend route is still syncing
-        setCareerGuide(prev => ({ ...prev, version: (prev.version || 1) + 1, future_proof_score: Math.min(100, prev.future_proof_score + 2) }));
+        const errData = await res.json().catch(() => ({}));
+        console.error('❌ Career guide generate failed:', res.status, errData);
+        // Optimistic visual update so UI doesn’t silently fail
+        setCareerGuide(prev => ({ ...prev, version: (prev.version || 1) + 1, future_proof_score: Math.min(100, (prev.future_proof_score || 0) + 2) }));
       }
     } catch (e) {
       console.error('CareerGuide generation failed:', e);
       setCareerGuide(prev => ({ ...prev, version: (prev.version || 1) + 1 }));
     }
     setGenerating(false);
+  };
+
+  const handleMilestoneToggle = async (milestoneId, isCompleted) => {
+    // Optimistic UI Update
+    setCareerGuide((prev) => ({
+      ...prev,
+      milestones: prev.milestones.map((m) =>
+        m.id === milestoneId ? { ...m, is_completed: isCompleted } : m
+      ),
+    }));
+
+    if (token) {
+      try {
+        const res = await fetch(`${baseUrl}/career-guide/milestones/${milestoneId}`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ is_completed: isCompleted }),
+        });
+        if (!res.ok) {
+          console.error('Failed to update milestone on server');
+          // Revert on failure
+          setCareerGuide((prev) => ({
+            ...prev,
+            milestones: prev.milestones.map((m) =>
+              m.id === milestoneId ? { ...m, is_completed: !isCompleted } : m
+            ),
+          }));
+        }
+      } catch (err) {
+        console.error('Milestone update error:', err);
+        // Revert on failure
+        setCareerGuide((prev) => ({
+          ...prev,
+          milestones: prev.milestones.map((m) =>
+            m.id === milestoneId ? { ...m, is_completed: !isCompleted } : m
+          ),
+        }));
+      }
+    }
   };
 
   return (
@@ -499,7 +561,7 @@ function CareerGuide() {
             transition={{ delay: 0.2 }}
             className="lg:col-span-2 flex flex-col gap-6"
           >
-            <MilestoneTracker milestones={careerGuide.milestones} />
+            <MilestoneTracker milestones={careerGuide.milestones} onToggle={handleMilestoneToggle} />
 
             {/* Next Steps Panel (Below Milestones) */}
             <div className="glass-card p-6">

@@ -1,6 +1,6 @@
 """
 DestinAI — AI Service
-Integration with Google Gemini, OpenAI, Meta (Llama), Perplexity, Grok, and DeepSeek.
+Integration with Google Gemini (google.genai SDK), OpenAI, Meta (Llama), Perplexity, Grok, and DeepSeek.
 Handles career guide generation, career simulation, college matching, and career ranking.
 """
 
@@ -12,6 +12,17 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Prioritized list of Gemini model IDs to try (from cheapest/fastest to more powerful)
+# The system will pick the first one that works for this API key
+GEMINI_MODEL_PRIORITY = [
+    "gemini-2.5-flash",          # Latest stable 2.5 flash (higher quota)
+    "gemini-2.0-flash",          # Stable 2.0 flash
+    "gemini-2.0-flash-lite",     # Ultra-fast, low quota usage
+    "gemini-flash-lite-latest",  # Lite flash alias
+    "gemini-flash-latest",       # Alias for latest flash (tiny daily free limit)
+    "gemini-pro-latest",         # Pro (more powerful, higher quota)
+]
+
 
 class AIService:
     """AI service for career guidance using multiple LLM providers."""
@@ -20,10 +31,15 @@ class AIService:
         self.primary_model = settings.AI_PRIMARY_MODEL
         self.fallback_model = settings.AI_FALLBACK_MODEL
         self._key_validity_cache = {}
+        self._gemini_working_model: Optional[str] = None  # Cached working Gemini model name
         self.last_used_model = "mock"
 
     def is_api_configured(self, provider: Optional[str] = None) -> bool:
         """Check if the selected AI provider's API key is configured (i.e. not empty)."""
+        settings.reload_from_env()
+        self.primary_model = settings.AI_PRIMARY_MODEL
+        self.fallback_model = settings.AI_FALLBACK_MODEL
+
         prov = (provider or self.primary_model).lower()
         key = ""
         if prov == "gemini":
@@ -43,6 +59,10 @@ class AIService:
 
     def is_api_key_placeholder(self, provider: Optional[str] = None) -> bool:
         """Check if the configured API key is just a placeholder."""
+        settings.reload_from_env()
+        self.primary_model = settings.AI_PRIMARY_MODEL
+        self.fallback_model = settings.AI_FALLBACK_MODEL
+
         prov = (provider or self.primary_model).lower()
         key = ""
         if prov == "gemini":
@@ -60,25 +80,97 @@ class AIService:
 
         return "your-key" in key.lower() or "your-api" in key.lower()
 
+    def _get_provider_key_from_settings(self, provider: str) -> str:
+        """Helper to get key value for a provider from settings."""
+        prov = provider.lower()
+        if prov == "gemini":
+            return settings.GEMINI_API_KEY
+        elif prov == "openai":
+            return settings.OPENAI_API_KEY
+        elif prov == "meta":
+            return settings.META_API_KEY
+        elif prov == "perplexity":
+            return settings.PERPLEXITY_API_KEY
+        elif prov == "grok":
+            return settings.GROK_API_KEY
+        elif prov == "deepseek":
+            return settings.DEEPSEEK_API_KEY
+        return ""
+
     async def verify_provider_key(self, provider: str) -> bool:
         """Perform a quick, lightweight connection test to verify if the API key is working."""
+        settings.reload_from_env()
+        self.primary_model = settings.AI_PRIMARY_MODEL
+        self.fallback_model = settings.AI_FALLBACK_MODEL
+
         prov = provider.lower()
+
+        # Validate that the provider is supported
+        SUPPORTED_PROVIDERS = {"gemini", "openai", "meta", "perplexity", "grok", "deepseek"}
+        if prov not in SUPPORTED_PROVIDERS:
+            logger.warning(f"Unsupported AI provider '{prov}' requested. Supported providers are: {sorted(list(SUPPORTED_PROVIDERS))}")
+            self._key_validity_cache[prov] = (False, "")
+            return False
+
+        current_key = self._get_provider_key_from_settings(prov)
+
+        # Check validity cache with key value check
         if prov in self._key_validity_cache:
-            return self._key_validity_cache[prov]
+            cached_val, cached_key = self._key_validity_cache[prov]
+            if cached_key == current_key:
+                return cached_val
 
         if not self.is_api_configured(prov) or self.is_api_key_placeholder(prov):
-            self._key_validity_cache[prov] = False
+            self._key_validity_cache[prov] = (False, current_key)
             return False
 
         try:
             logger.info(f"Performing live validation test for AI provider '{prov}'...")
             if prov == "gemini":
-                import google.generativeai as genai
-                genai.configure(api_key=settings.GEMINI_API_KEY)
-                model = genai.GenerativeModel("gemini-1.5-flash")
-                # Fast connection test
-                response = model.generate_content("Ping")
-                is_valid = response is not None and bool(response.text)
+                # Use new google.genai SDK — try each model in priority order
+                from google import genai as _genai
+                client = _genai.Client(api_key=settings.GEMINI_API_KEY)
+                working_model = None
+                has_quota_error = False
+                fallback_model = None
+                for model_name in GEMINI_MODEL_PRIORITY:
+                    try:
+                        resp = await client.aio.models.generate_content(model=model_name, contents="Ping")
+                        if resp and resp.text:
+                            working_model = model_name
+                            break
+                    except Exception as model_err:
+                        err_str = str(model_err)
+                        if "404" in err_str or "NOT_FOUND" in err_str:
+                            continue  # Model not available for this key
+                        elif "401" in err_str or "403" in err_str or "API_KEY_INVALID" in err_str:
+                            # Key is invalid — stop trying
+                            logger.warning(f"Gemini API key is invalid: {err_str[:100]}")
+                            self._key_validity_cache[prov] = (False, current_key)
+                            return False
+                        elif "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                            # Quota exceeded on this model — but key IS valid, try next to find one with quota
+                            logger.warning(f"Gemini quota exhausted for {model_name}, trying next...")
+                            has_quota_error = True
+                            if not fallback_model:
+                                fallback_model = model_name
+                            continue
+                        else:
+                            logger.warning(f"Gemini model {model_name} error: {err_str[:100]}")
+                            continue
+
+                if not working_model and has_quota_error:
+                    working_model = fallback_model
+
+                if working_model:
+                    self._gemini_working_model = working_model
+                    logger.info(f"Gemini validated with model: {working_model}")
+                    self._key_validity_cache[prov] = (True, current_key)
+                    return True
+                else:
+                    logger.warning("No working Gemini model found for this API key.")
+                    self._key_validity_cache[prov] = (False, current_key)
+                    return False
             else:
                 from openai import OpenAI
                 api_key = ""
@@ -114,16 +206,20 @@ class AIService:
                     max_tokens=5,
                 )
                 is_valid = response is not None and len(response.choices) > 0
+                self._key_validity_cache[prov] = (is_valid, current_key)
+                return is_valid
 
-            self._key_validity_cache[prov] = is_valid
-            return is_valid
         except Exception as e:
             logger.warning(f"Connection test failed for provider '{prov}': {e}")
-            self._key_validity_cache[prov] = False
+            self._key_validity_cache[prov] = (False, current_key)
             return False
 
     async def get_active_validated_provider(self) -> Optional[str]:
         """Check primary provider first, and if invalid, fall back to any other configured and validated working provider."""
+        settings.reload_from_env()
+        self.primary_model = settings.AI_PRIMARY_MODEL
+        self.fallback_model = settings.AI_FALLBACK_MODEL
+
         primary = self.primary_model.lower()
         if await self.verify_provider_key(primary):
             return primary
@@ -226,15 +322,46 @@ Respond ONLY with valid JSON."""
             return None
 
     async def generate_with_gemini(self, prompt: str) -> Optional[Dict[str, Any]]:
-        """Generate response using Google Gemini API."""
+        """Generate response using Google Gemini API (google.genai SDK)."""
         try:
-            import google.generativeai as genai
+            from google import genai as _genai
+            client = _genai.Client(api_key=settings.GEMINI_API_KEY)
 
-            genai.configure(api_key=settings.GEMINI_API_KEY)
-            model_name = settings.AI_MODEL_NAME if settings.AI_MODEL_NAME else "gemini-1.5-flash"
-            model = genai.GenerativeModel(model_name)
-            response = model.generate_content(prompt)
-            return self._parse_json_response(response.text)
+            # Use the cached working model from validation, or auto-detect
+            model_candidates = [self._gemini_working_model] if self._gemini_working_model else []
+            if settings.AI_MODEL_NAME and settings.AI_MODEL_NAME not in model_candidates:
+                model_candidates.insert(0, settings.AI_MODEL_NAME)
+            model_candidates.extend(m for m in GEMINI_MODEL_PRIORITY if m not in model_candidates)
+
+            last_err = None
+            for model_name in model_candidates:
+                try:
+                    logger.info(f"Gemini: Trying model '{model_name}'...")
+                    resp = await client.aio.models.generate_content(model=model_name, contents=prompt)
+                    result = self._parse_json_response(resp.text)
+                    if result is not None:
+                        self._gemini_working_model = model_name  # Cache the working model
+                        self.last_used_model = f"gemini/{model_name}"
+                        logger.info(f"Gemini generation succeeded with model: {model_name}")
+                        return result
+                    logger.warning(f"Gemini model {model_name} returned non-JSON response, trying next...")
+                except Exception as model_err:
+                    err_str = str(model_err)
+                    last_err = model_err
+                    if "404" in err_str or "NOT_FOUND" in err_str:
+                        continue  # Model not available
+                    elif "401" in err_str or "403" in err_str or "API_KEY_INVALID" in err_str:
+                        logger.error(f"Gemini API key rejected: {err_str[:100]}")
+                        return None  # Key invalid — don't try other models
+                    elif "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                        logger.warning(f"Gemini quota exceeded for {model_name}: trying next...")
+                        continue
+                    else:
+                        logger.warning(f"Gemini model {model_name} failed: {err_str[:120]}")
+                        continue
+
+            logger.error(f"All Gemini models failed. Last error: {last_err}")
+            return None
 
         except Exception as e:
             logger.error(f"Gemini API error: {e}")
@@ -286,35 +413,36 @@ Respond ONLY with valid JSON."""
         self.last_used_model = provider
         logger.info(f"Using validated AI provider '{provider}' for task.")
 
+        result = None
         if provider == "gemini":
-            return await self.generate_with_gemini(prompt)
+            result = await self.generate_with_gemini(prompt)
         elif provider == "openai":
-            return await self.generate_with_openai_compatible(
+            result = await self.generate_with_openai_compatible(
                 prompt, base_url="", api_key=settings.OPENAI_API_KEY, default_model="gpt-4o"
             )
         elif provider == "meta":
-            return await self.generate_with_openai_compatible(
+            result = await self.generate_with_openai_compatible(
                 prompt,
                 base_url="https://api.together.xyz/v1",
                 api_key=settings.META_API_KEY,
                 default_model="meta-llama/Llama-3-8b-chat-hf"
             )
         elif provider == "perplexity":
-            return await self.generate_with_openai_compatible(
+            result = await self.generate_with_openai_compatible(
                 prompt,
                 base_url="https://api.perplexity.ai",
                 api_key=settings.PERPLEXITY_API_KEY,
                 default_model="sonar-reasoning"
             )
         elif provider == "grok":
-            return await self.generate_with_openai_compatible(
+            result = await self.generate_with_openai_compatible(
                 prompt,
                 base_url="https://api.x.ai/v1",
                 api_key=settings.GROK_API_KEY,
                 default_model="grok-beta"
             )
         elif provider == "deepseek":
-            return await self.generate_with_openai_compatible(
+            result = await self.generate_with_openai_compatible(
                 prompt,
                 base_url="https://api.deepseek.com/v1",
                 api_key=settings.DEEPSEEK_API_KEY,
@@ -322,12 +450,34 @@ Respond ONLY with valid JSON."""
             )
         else:
             logger.error(f"Unknown AI provider configured: {provider}")
-            return None
+            result = None
+
+        if result is None:
+            logger.warning(f"AI Generation failed or returned empty for provider '{provider}'. Resetting last_used_model to 'mock'.")
+            self.last_used_model = "mock"
+        return result
 
     async def generate_mock_response(self, inputs: Dict[str, str]) -> Dict[str, Any]:
         """Generate a mock response when no API keys are configured."""
-        stream = inputs.get("preferred_stream", "science")
-        interest = inputs.get("interest_areas", "technology")
+        stream = inputs.get("preferred_stream", "science").lower()
+        interest_raw = inputs.get("interest_areas", "technology").lower()
+        
+        # Map common interest keywords to category keys
+        interest = "default"
+        if "tech" in interest_raw or "analy" in interest_raw:
+            interest = "technology"
+        elif "med" in interest_raw or "health" in interest_raw:
+            interest = "medicine"
+        elif "research" in interest_raw or "sci" in interest_raw:
+            interest = "research"
+        elif "finan" in interest_raw or "math" in interest_raw:
+            interest = "finance"
+        elif "business" in interest_raw or "manag" in interest_raw or "enter" in interest_raw:
+            interest = "business"
+        elif "design" in interest_raw or "creat" in interest_raw:
+            interest = "design"
+        elif "media" in interest_raw or "social" in interest_raw:
+            interest = "media"
 
         career_map = {
             "science": {
@@ -620,45 +770,89 @@ Respond ONLY with valid JSON."""
     def generate_mock_career_predictions(self, careers: List[Dict[str, Any]], criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Generate high-quality mock career predictions with match scores and reasons when LLM fails."""
         scored_careers = []
+        
+        # Check if we have meaningful criteria
+        pref_stream = criteria.get("preferred_stream", "").strip()
+        interests = criteria.get("interests", "").strip()
+        strengths = criteria.get("strengths", "").strip()
+        
+        has_criteria = bool(pref_stream or interests or strengths)
+        
         for c in careers:
-            score = 55.0  # Base mock AI score
+            score = 45.0  # Base mock AI score (lower base for differentiation)
             reasons = []
             
-            pref_stream = criteria.get("preferred_stream")
+            # Stream matching (30 points)
             if pref_stream and c.get("stream") and pref_stream.lower() in c["stream"].lower():
                 reasons.append(f"Aligned with {c['stream']} stream")
-                score += 20.0
+                score += 30.0
                 
-            interests = criteria.get("interests")
+            # Interest matching (25 points max)
             if interests:
                 words = [w.strip().lower() for w in interests.split(",") if w.strip()]
                 matched = []
                 for w in words:
-                    if w in c["title"].lower() or w in c.get("category", "").lower():
+                    title_match = w in c["title"].lower()
+                    cat_match = w in c.get("category", "").lower()
+                    desc_match = w in c.get("description", "").lower()
+                    if title_match or cat_match or desc_match:
                         matched.append(w)
                 if matched:
-                    reasons.append(f"Matches interest in {', '.join(matched)}")
-                    score += 15.0
+                    reasons.append(f"Matches your interests: {', '.join(matched)}")
+                    score += min(len(matched) * 12, 25)
                 else:
-                    reasons.append(f"Complementary to interest areas")
-                    score += 5.0
+                    reasons.append("Complementary to your interests")
+                    score += 3.0
+            elif has_criteria:
+                # Has other criteria but no interests specified
+                score += 2.0
             else:
-                reasons.append("Versatile fit for diverse interests")
-                score += 5.0
+                # No criteria at all - vary based on career popularity/demand
+                demand_lower = (c.get("demand_level") or "").lower()
+                if demand_lower == "high":
+                    score += 15.0
+                    reasons.append("High-growth industry demand")
+                elif demand_lower == "medium":
+                    score += 8.0
+                    reasons.append("Steady industry demand")
+                else:
+                    score += 3.0
                 
-            if c.get("demand_level") == "High":
-                reasons.append("High-growth industry demand")
-                score += 10.0
+            # Strengths matching (20 points max)
+            if strengths:
+                strength_words = [w.strip().lower() for w in strengths.split(",") if w.strip()]
+                matched_strengths = []
+                for w in strength_words:
+                    if w in c["title"].lower() or w in c.get("category", "").lower():
+                        matched_strengths.append(w)
+                if matched_strengths:
+                    reasons.append(f"Leverages your strengths in {', '.join(matched_strengths)}")
+                    score += min(len(matched_strengths) * 10, 20)
                 
+            # Demand level bonus (10 points)
+            demand_lower = (c.get("demand_level") or "").lower()
+            if demand_lower == "high" and not (interests or has_criteria and not pref_stream):
+                if "High-growth" not in str(reasons):
+                    reasons.append("High-growth industry demand")
+                    score += 5.0
+                
+            # Salary bonus (8 points)
             if c.get("average_salary_entry") and int(c["average_salary_entry"]) > 600000:
-                reasons.append("Lucrative entry-level compensation package")
+                reasons.append("Lucrative entry-level compensation")
                 score += 8.0
                 
+            # Growth rate bonus (5 points)
+            if c.get("growth_rate") and float(c.get("growth_rate", 0)) > 15.0:
+                reasons.append("Strong career growth potential")
+                score += 5.0
+                
+            # Cap and round score
             score = min(score, 99.0)
+            
             scored_careers.append({
                 "career_id": c["id"],
                 "match_score": int(score),
-                "match_reasons": reasons[:3]
+                "match_reasons": reasons[:3] if reasons else ["Matches your profile"]
             })
             
         scored_careers.sort(key=lambda x: x["match_score"], reverse=True)
@@ -667,85 +861,117 @@ Respond ONLY with valid JSON."""
     async def predict_college_matches(self, colleges: List[Dict[str, Any]], criteria: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
         """Use the selected LLM to rank and score colleges based on criteria."""
         college_list_str = "\n".join([
-            f"- ID: {c['id']}, Name: {c['name']}, University: {c.get('university') or 'N/A'}, NIRF Rank: {c.get('nirf_rank') or 'N/A'}, Placement Rate: {c.get('placement_rate') or 'N/A'}%, Average Package: {c.get('average_package') or 'N/A'} LPA, Fees Max: {c.get('fee_range_max') or 'N/A'}, City: {c.get('city') or 'N/A'}, State: {c.get('state') or 'N/A'}, Type: {c.get('type') or 'N/A'}"
-            for c in colleges[:50]
+            f"- ID: {c['id']}, Name: {c['name']}, NIRF Rank: {c.get('nirf_rank') or 'N/A'}, "
+            f"Placement Rate: {c.get('placement_rate') or 'N/A'}%, Avg Package: {c.get('average_package') or 'N/A'} LPA, "
+            f"Fee Range: {c.get('fee_range_min') or 0}-{c.get('fee_range_max') or 'N/A'} INR/yr, "
+            f"City: {c.get('city') or 'N/A'}, State: {c.get('state') or 'N/A'}, "
+            f"Type: {c.get('type') or 'N/A'}, Streams: {c.get('offered_streams') or 'N/A'}, "
+            f"Accreditation: {c.get('accreditation') or 'N/A'}"
+            for c in colleges[:25]
         ])
         
-        prompt = f"""You are DestinAI, an expert AI education counselor. Rank the following colleges based on the student's criteria.
+        prompt = f"""You are DestinAI, an expert AI education counselor for Indian students. Analyze and rank colleges for this student.
 
-## Student Criteria:
-- Preferred Stream: {criteria.get('preferred_stream') or 'N/A'}
-- Location Preference: {criteria.get('location') or 'N/A'}
-- Budget Range: {criteria.get('budget_range') or 'N/A'}
+## Student Profile:
+- Preferred Stream: {criteria.get('preferred_stream') or 'Not specified'}
+- Location Preference: {criteria.get('location') or 'Any'}
+- Budget Range: {criteria.get('budget_range') or 'Any'}
+- Career Interests: {criteria.get('interests') or 'Not specified'}
 
-## Available Colleges:
+## Available Colleges (ID, Name, Key Metrics):
 {college_list_str}
 
-## Instructions:
-1. Rank the top 10 matching colleges from the list.
-2. For each ranked college, calculate a match_score (0-100) based on NIRF rank, location fit, budget fit, placements, and stream.
-3. Provide 2-3 specific match_reasons for why this college is recommended.
-4. Respond ONLY with valid JSON in this exact structure (no markdown formatting, no extra text):
+## Scoring Instructions:
+For EACH college in the list, assign a match_score (0-100) based on:
+- Stream alignment (30 pts): Does the college offer the student's preferred stream?
+- Location fit (25 pts): How well does the location match preference?
+- Budget fit (25 pts): Is the fee range within the student's budget?
+- Placement quality (15 pts): Placement rate and average package
+- NIRF rank bonus (5 pts): Prestige of institution
+
+Return ALL {len(colleges[:25])} colleges scored. Then sort by match_score descending.
+For each college, provide 1 specific, personalized match_reason (max 15 words, mentioning city/fees/placement).
+
+Respond ONLY with valid JSON array (no markdown, no extra text):
 [
     {{
         "college_id": 1,
-        "match_score": 95,
-        "match_reasons": ["Located in your preferred city", "NIRF Rank #10", "Affordable fees within budget"]
+        "match_score": 88,
+        "match_reasons": ["Offers your preferred stream and budget fits Mumbai location"]
     }}
-]
-
-Respond ONLY with valid JSON."""
+]"""
 
         result = await self.generate_with_selected_provider(prompt)
-        if isinstance(result, list):
+        if isinstance(result, list) and len(result) > 0 and "college_id" in result[0]:
+            logger.info(f"LLM college prediction returned {len(result)} results via {self.last_used_model}")
             return result
         elif isinstance(result, dict) and "matches" in result:
             return result["matches"]
+        elif isinstance(result, list) and len(result) > 0:
+            # Sometimes LLM wraps result differently — try to find the right key
+            first = result[0]
+            if isinstance(first, dict) and any(k in first for k in ["id", "college_id", "collegeId"]):
+                return [{"college_id": r.get("college_id") or r.get("id") or r.get("collegeId"),
+                          "match_score": r.get("match_score", 50),
+                          "match_reasons": r.get("match_reasons", [])} for r in result]
             
-        # Fallback to high-quality mock predictions if API key is invalid/placeholder/fails
-        logger.warning("predict_college_matches LLM call failed or key is placeholder. Generating high-quality mock predictions.")
+        # Fallback to high-quality rule-based predictions
+        logger.warning(f"predict_college_matches LLM call failed (model: {self.last_used_model}). Using rule-based fallback.")
         return self.generate_mock_college_predictions(colleges, criteria)
 
     async def predict_career_matches(self, careers: List[Dict[str, Any]], criteria: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
         """Use the selected LLM to rank and score careers based on criteria."""
         career_list_str = "\n".join([
-            f"- ID: {c['id']}, Title: {c['title']}, Stream: {c.get('stream') or 'N/A'}, Category: {c.get('category') or 'N/A'}, Demand: {c.get('demand_level') or 'N/A'}, Entry Salary: {c.get('average_salary_entry') or 'N/A'}, Growth Rate: {c.get('growth_rate') or 0}%"
-            for c in careers[:50]
+            f"- ID: {c['id']}, Title: {c['title']}, Stream: {c.get('stream') or 'N/A'}, "
+            f"Category: {c.get('category') or 'N/A'}, Demand: {c.get('demand_level') or 'N/A'}, "
+            f"Entry Salary: \u20b9{c.get('average_salary_entry') or 'N/A'}, Growth Rate: {c.get('growth_rate') or 0}% p.a."
+            for c in careers[:25]
         ])
         
-        prompt = f"""You are DestinAI, an expert AI career counselor. Rank the following careers based on the student's interests and profile.
+        prompt = f"""You are DestinAI, an expert AI career counselor. Analyze and score careers for this student based on their specific profile.
 
 ## Student Profile:
-- Interests: {criteria.get('interests') or 'N/A'}
-- Strengths: {criteria.get('strengths') or 'N/A'}
-- Preferred Stream: {criteria.get('preferred_stream') or 'N/A'}
+- Interests: {criteria.get('interests') or 'Not specified'}
+- Strengths: {criteria.get('strengths') or 'Not specified'}
+- Preferred Stream: {criteria.get('preferred_stream') or 'Not specified'}
 
-## Available Careers:
+## Available Careers (ID, Title, Key Metrics):
 {career_list_str}
 
-## Instructions:
-1. Rank the top 10 matching careers from the list.
-2. For each ranked career, calculate a match_score (0-100) based on how well it fits their interests, strengths, and stream.
-3. Provide 2-3 specific match_reasons for why this career is a good fit.
-4. Respond ONLY with valid JSON in this exact structure (no markdown formatting, no extra text):
+## Scoring Instructions:
+For EACH career in the list, assign a match_score (0-100) based on:
+- Interest alignment (35 pts): How closely does it match their stated interests?
+- Strength alignment (25 pts): Does it leverage their stated strengths?
+- Stream compatibility (20 pts): Is it in their preferred academic stream?
+- Growth & salary (20 pts): Job market demand, salary, and growth rate
+
+Return ALL {len(careers[:25])} careers scored. Sort by match_score descending.
+For each career, provide 1 specific, personalized match_reason (max 15 words, mentioning their interests/strengths).
+
+Respond ONLY with valid JSON array (no markdown, no extra text):
 [
     {{
         "career_id": 1,
-        "match_score": 95,
-        "match_reasons": ["Matches your interest in technology", "Leverages your problem-solving strengths", "High growth rate and demand"]
+        "match_score": 91,
+        "match_reasons": ["Directly aligns with your interest in technology and analytical strengths"]
     }}
-]
-
-Respond ONLY with valid JSON."""
+]"""
 
         result = await self.generate_with_selected_provider(prompt)
-        if isinstance(result, list):
+        if isinstance(result, list) and len(result) > 0 and "career_id" in result[0]:
+            logger.info(f"LLM career prediction returned {len(result)} results via {self.last_used_model}")
             return result
         elif isinstance(result, dict) and "matches" in result:
             return result["matches"]
+        elif isinstance(result, list) and len(result) > 0:
+            first = result[0]
+            if isinstance(first, dict) and any(k in first for k in ["id", "career_id", "careerId"]):
+                return [{"career_id": r.get("career_id") or r.get("id") or r.get("careerId"),
+                          "match_score": r.get("match_score", 50),
+                          "match_reasons": r.get("match_reasons", [])} for r in result]
             
-        # Fallback to high-quality mock predictions if API key is invalid/placeholder/fails
-        logger.warning("predict_career_matches LLM call failed or key is placeholder. Generating high-quality mock predictions.")
+        # Fallback to high-quality rule-based predictions
+        logger.warning(f"predict_career_matches LLM call failed (model: {self.last_used_model}). Using rule-based fallback.")
         return self.generate_mock_career_predictions(careers, criteria)
 
 

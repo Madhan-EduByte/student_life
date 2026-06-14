@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Navigate } from 'react-router-dom';
-import { HiEye, HiPlay, HiClock, HiCurrencyRupee, HiFilter, HiSortAscending, HiChevronLeft, HiChevronRight, HiSparkles, HiSearch } from 'react-icons/hi';
+import { HiEye, HiPlay, HiClock, HiCurrencyRupee, HiFilter, HiSortAscending, HiChevronLeft, HiChevronRight, HiChevronDoubleLeft, HiChevronDoubleRight, HiSparkles, HiSearch } from 'react-icons/hi';
 import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
 import CareerProfileForm from '../components/common/CareerProfileForm';
@@ -217,6 +217,16 @@ function Simulation() {
     }
   };
 
+  // Determine block-based page numbers (9 pages per block)
+  const maxVisiblePages = 9;
+  const currentBlock = Math.floor((currentPage - 1) / maxVisiblePages);
+  const startPage = currentBlock * maxVisiblePages + 1;
+  const endPage = Math.min(startPage + maxVisiblePages - 1, totalPages);
+  const pageNumbers = [];
+  for (let i = startPage; i <= endPage; i++) {
+    pageNumbers.push(i);
+  }
+
   return (
     <div className="min-h-screen pt-24 pb-16" id="simulation-page">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -284,7 +294,6 @@ function Simulation() {
                   <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
                     {/* Stream Filter Buttons */}
                     <div className="flex flex-wrap gap-2 items-center bg-white/5 border border-white/10 p-1 rounded-xl">
-                      <HiFilter className="text-surface-500 ml-2 mr-1" size={16} />
                       {filters.map((filter) => (
                         <button
                           key={filter.key}
@@ -367,34 +376,111 @@ function Simulation() {
 
                   {/* Pagination Controls */}
                   {totalPages > 1 && (
-                    <div className="flex justify-center items-center gap-4 mt-8">
-                      <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
-                          currentPage === 1
-                            ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
-                            : 'border-white/10 bg-white/5 hover:border-primary-500/20 text-white'
-                        }`}
-                      >
-                        <HiChevronLeft size={16} />
-                      </button>
+                    <div className="flex flex-col justify-center items-center gap-4 mt-12 border-t border-white/5 pt-8 w-full">
+                      {/* Page details on their own separate line */}
+                      <div className="text-xs text-surface-400 font-semibold font-mono text-center">
+                        Showing Page <span className="text-white font-bold">{currentPage}</span> of <span className="text-surface-300 font-bold">{totalPages}</span> ({sortedMatches.length} total careers)
+                      </div>
                       
-                      <span className="text-xs text-surface-400 font-semibold font-mono">
-                        Page <span className="text-white font-bold">{currentPage}</span> of {totalPages}
-                      </span>
+                      {/* Button strip */}
+                      <div className="flex justify-center items-center gap-2 flex-wrap">
+                        {/* Double Left Arrow (Skip 10 Pages) */}
+                        <button
+                          onClick={() => handlePageChange(Math.max(currentPage - 10, 1))}
+                          disabled={currentPage === 1}
+                          className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
+                            currentPage === 1
+                              ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
+                              : 'border-white/10 bg-white/5 hover:border-accent-500/20 text-white hover:bg-white/10 active:scale-95'
+                          }`}
+                          title="Skip 10 Pages Back"
+                        >
+                          <HiChevronDoubleLeft size={16} />
+                        </button>
 
-                      <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
-                          currentPage === totalPages
-                            ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
-                            : 'border-white/10 bg-white/5 hover:border-primary-500/20 text-white'
-                        }`}
-                      >
-                        <HiChevronRight size={16} />
-                      </button>
+                        {/* Previous Page Button */}
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
+                            currentPage === 1
+                              ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
+                              : 'border-white/10 bg-white/5 hover:border-accent-500/20 text-white hover:bg-white/10 active:scale-95'
+                          }`}
+                          title="Previous Page"
+                        >
+                          <HiChevronLeft size={16} />
+                        </button>
+                        
+                        {/* Block Pagination Jump Prev (if startPage > 1) */}
+                        {startPage > 1 && (
+                          <>
+                            <button
+                              onClick={() => handlePageChange(1)}
+                              className="w-10 h-10 rounded-lg border border-white/10 bg-white/5 text-xs font-bold font-mono text-surface-400 hover:text-white hover:border-white/20 active:scale-95 transition-all"
+                            >
+                              1
+                            </button>
+                            <span className="text-surface-600 text-xs px-1 select-none font-mono">...</span>
+                          </>
+                        )}
+
+                        {/* Page Numbers Block */}
+                        {pageNumbers.map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`w-10 h-10 rounded-lg border text-xs font-bold font-mono transition-all active:scale-95 ${
+                              currentPage === page
+                                ? 'bg-accent-600/20 text-accent-300 border-accent-500/50 shadow-[0_0_15px_rgba(219,39,119,0.15)] font-extrabold'
+                                : 'border-white/10 bg-white/5 text-surface-400 hover:text-white hover:border-white/20'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+
+                        {/* Block Pagination Jump Next (if endPage < totalPages) */}
+                        {endPage < totalPages && (
+                          <>
+                            <span className="text-surface-600 text-xs px-1 select-none font-mono">...</span>
+                            <button
+                              onClick={() => handlePageChange(totalPages)}
+                              className="w-10 h-10 rounded-lg border border-white/10 bg-white/5 text-xs font-bold font-mono text-surface-400 hover:text-white hover:border-white/20 active:scale-95 transition-all"
+                            >
+                              {totalPages}
+                            </button>
+                          </>
+                        )}
+
+                        {/* Next Page Button */}
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
+                            currentPage === totalPages
+                              ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
+                              : 'border-white/10 bg-white/5 hover:border-accent-500/20 text-white hover:bg-white/10 active:scale-95'
+                          }`}
+                          title="Next Page"
+                        >
+                          <HiChevronRight size={16} />
+                        </button>
+
+                        {/* Double Right Arrow (Skip 10 Pages) */}
+                        <button
+                          onClick={() => handlePageChange(Math.min(currentPage + 10, totalPages))}
+                          disabled={currentPage === totalPages}
+                          className={`p-2.5 rounded-lg border text-sm font-semibold transition-all ${
+                            currentPage === totalPages
+                              ? 'border-white/5 bg-white/2 text-surface-600 cursor-not-allowed'
+                              : 'border-white/10 bg-white/5 hover:border-accent-500/20 text-white hover:bg-white/10 active:scale-95'
+                          }`}
+                          title="Skip 10 Pages Forward"
+                        >
+                          <HiChevronDoubleRight size={16} />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </>

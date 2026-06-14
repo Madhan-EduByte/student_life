@@ -57,8 +57,8 @@ function CollegeCard({ college, matchScore, matchReasons, onClick, index = 0, ai
           <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
             <HiStar className="text-yellow-400" size={14} />
             <div>
-              <p className="text-xs text-surface-500">NIRF Rank</p>
-              <p className="text-sm font-semibold text-white">#{college.nirf_rank}</p>
+              <p className="text-[10px] text-surface-500">NIRF Rank</p>
+              <p className="text-xs font-bold text-white">#{college.nirf_rank}</p>
             </div>
           </div>
         )}
@@ -66,8 +66,8 @@ function CollegeCard({ college, matchScore, matchReasons, onClick, index = 0, ai
           <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
             <HiAcademicCap className="text-green-400" size={14} />
             <div>
-              <p className="text-xs text-surface-500">Placement</p>
-              <p className="text-sm font-semibold text-white">{college.placement_rate}%</p>
+              <p className="text-[10px] text-surface-500">Placement</p>
+              <p className="text-xs font-bold text-white">{college.placement_rate}%</p>
             </div>
           </div>
         )}
@@ -75,30 +75,52 @@ function CollegeCard({ college, matchScore, matchReasons, onClick, index = 0, ai
           <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
             <HiCurrencyRupee className="text-primary-400" size={14} />
             <div>
-              <p className="text-xs text-surface-500">Avg Package</p>
-              <p className="text-sm font-semibold text-white">₹{college.average_package} LPA</p>
+              <p className="text-[10px] text-surface-500">Avg Package</p>
+              <p className="text-xs font-bold text-white">₹{college.average_package} LPA</p>
             </div>
           </div>
         )}
         {college.accreditation && (
           <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
-            <span className="text-sm">🏅</span>
+            <span className="text-xs">🏅</span>
             <div>
-              <p className="text-xs text-surface-500">Accredited</p>
-              <p className="text-sm font-semibold text-white">{college.accreditation}</p>
+              <p className="text-[10px] text-surface-500">Accredited</p>
+              <p className="text-xs font-bold text-white truncate max-w-[80px]">{college.accreditation}</p>
+            </div>
+          </div>
+        )}
+        {(college.fee_range_min || college.fee_range_max) && (
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5 col-span-2">
+            <span className="text-xs">💰</span>
+            <div>
+              <p className="text-[10px] text-surface-500">Admission Fee Range</p>
+              <p className="text-xs font-bold text-white">
+                ₹{college.fee_range_min?.toLocaleString()} - ₹{college.fee_range_max?.toLocaleString()} / yr
+              </p>
+            </div>
+          </div>
+        )}
+        {(college.phone || college.email) && (
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5 col-span-2">
+            <span className="text-xs">📞</span>
+            <div className="min-w-0">
+              <p className="text-[10px] text-surface-500">Contact Details</p>
+              <p className="text-xs font-bold text-white truncate max-w-[240px]">
+                {college.phone || college.email}
+              </p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Recommended Courses */}
+      {/* Recommended Course */}
       {college.recommended_courses && college.recommended_courses.length > 0 && (
         <div className="mb-4 bg-white/2 p-3 rounded-xl border border-white/5">
           <p className="text-xs text-surface-400 font-semibold mb-2 flex items-center gap-1.5">
-            <span className="text-primary-400">🎓</span> Courses for you:
+            <span className="text-primary-400">🎓</span> Predicted Course:
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {college.recommended_courses.slice(0, 4).map((course, i) => (
+            {college.recommended_courses.slice(0, 1).map((course, i) => (
               <span
                 key={i}
                 className="px-2.5 py-0.5 rounded-lg text-[10px] bg-primary-600/10 text-primary-300 border border-primary-500/20 font-semibold"

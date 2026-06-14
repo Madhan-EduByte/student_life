@@ -55,21 +55,84 @@ class CareerGuideService:
         )
         if profile:
             for k, v in filtered_inputs.items():
-                if v is not None:
+                # Only update non-empty values to avoid overwriting existing data with blanks
+                if v is not None and v != "" and v != [] and v != "[]":
+                    # Ensure list values are stored as comma-separated strings
+                    if isinstance(v, list):
+                        v = ", ".join(str(x) for x in v)
                     setattr(profile, k, v)
         else:
-            profile = StudentProfile(user_id=user_id, **filtered_inputs)
+            cleaned_inputs = {}
+            for k, v in filtered_inputs.items():
+                if v is not None and v != "" and v != []:
+                    if isinstance(v, list):
+                        v = ", ".join(str(x) for x in v)
+                    cleaned_inputs[k] = v
+            profile = StudentProfile(user_id=user_id, **cleaned_inputs)
             db.add(profile)
-
-        # Deactivate previous career_guides
-        db.query(CareerGuide).filter(
-            CareerGuide.user_id == user_id, CareerGuide.is_active == True
-        ).update({"is_active": False})
 
         # Generate AI career_guide
         ai_result = await ai_service.generate_career_guide(career_inputs)
+        alt_careers_json = json.dumps(ai_result.get("alternative_careers", []))
 
-        # Create career_guide record
+        # Check if an active career guide already exists — update it instead of creating a new one
+        existing_guide = (
+            db.query(CareerGuide)
+            .filter(CareerGuide.user_id == user_id, CareerGuide.is_active == True)
+            .first()
+        )
+
+
+        if existing_guide:
+            # Store version history before updating
+            history = CareerGuideHistory(
+                career_guide_id=existing_guide.id,
+                version=existing_guide.version,
+                changes_summary="User-triggered regeneration from updated profile inputs",
+                previous_data=existing_guide.raw_ai_response,
+                reason="user_update",
+            )
+            db.add(history)
+
+            # Update the existing guide in place
+            existing_guide.title = ai_result.get("title", existing_guide.title)
+            existing_guide.summary = ai_result.get("summary", existing_guide.summary)
+            existing_guide.career_path = ai_result.get("career_path", existing_guide.career_path)
+            existing_guide.recommended_stream = ai_result.get("recommended_stream", existing_guide.recommended_stream)
+            existing_guide.confidence_score = ai_result.get("confidence_score", existing_guide.confidence_score)
+            existing_guide.future_proof_score = ai_result.get("future_proof_score", existing_guide.future_proof_score)
+            existing_guide.ai_model_used = ai_result.get("_ai_model_used", existing_guide.ai_model_used)
+            existing_guide.raw_ai_response = json.dumps(ai_result)
+            existing_guide.alternative_careers = alt_careers_json
+            existing_guide.version += 1
+            existing_guide.next_update_at = datetime.utcnow() + timedelta(days=180)
+
+            # Delete old milestones and replace with new ones
+            db.query(Milestone).filter(Milestone.career_guide_id == existing_guide.id).delete()
+            milestones_data = ai_result.get("milestones", [])
+            for i, m_data in enumerate(milestones_data):
+                milestone = Milestone(
+                    career_guide_id=existing_guide.id,
+                    week_number=m_data.get("week_number", i + 1),
+                    title=m_data.get("title", f"Week {i + 1}"),
+                    description=m_data.get("description", ""),
+                    category=m_data.get("category", "learning"),
+                    priority=m_data.get("priority", "medium"),
+                    estimated_hours=m_data.get("estimated_hours"),
+                    resources=json.dumps(m_data.get("resources", [])),
+                    order=i,
+                    due_date=datetime.utcnow() + timedelta(weeks=m_data.get("week_number", i + 1)),
+                )
+                db.add(milestone)
+
+            db.commit()
+            db.refresh(existing_guide)
+            logger.info(
+                f"Updated existing career_guide {existing_guide.id} to version {existing_guide.version} for user {user_id}"
+            )
+            return existing_guide
+
+        # No existing active guide — create a brand new one
         career_guide = CareerGuide(
             user_id=user_id,
             title=ai_result.get("title", "Your Career CareerGuide"),
@@ -80,6 +143,7 @@ class CareerGuideService:
             future_proof_score=ai_result.get("future_proof_score", 0),
             ai_model_used=ai_result.get("_ai_model_used", "unknown"),
             raw_ai_response=json.dumps(ai_result),
+            alternative_careers=alt_careers_json,
             version=1,
             is_active=True,
             next_update_at=datetime.utcnow() + timedelta(days=180),  # 6 months
@@ -207,6 +271,7 @@ class CareerGuideService:
         career_guide.confidence_score = ai_result.get("confidence_score", career_guide.confidence_score)
         career_guide.future_proof_score = ai_result.get("future_proof_score", career_guide.future_proof_score)
         career_guide.raw_ai_response = json.dumps(ai_result)
+        career_guide.alternative_careers = json.dumps(ai_result.get("alternative_careers", []))
         career_guide.version += 1
         career_guide.next_update_at = datetime.utcnow() + timedelta(days=180)
 
