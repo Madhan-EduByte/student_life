@@ -174,7 +174,7 @@ function CollegeMatch() {
               </span>
             ) : (
               <span className="px-3 py-1 rounded-full text-xs font-semibold bg-surface-800 text-surface-400 border border-white/5">
-                Rule-Based DNA Matcher Active
+                Rule-Based Recommendation Active
               </span>
             )}
           </div>

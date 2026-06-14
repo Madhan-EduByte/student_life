@@ -98,82 +98,130 @@ https://dashboard.aishe.gov.in/hedirectory/#/hedirectory/standaloneDetails/S/3
 - Storage: 10 GB free
 - **No Docker, WSL2, or virtual environments**
 
-        #### Install These 4 Apps
+#### Automated Command Line Setup (winget)
 
-        1. **Python 3.11+**
-        - Download: https://www.python.org/downloads/
-        - ✅ Check "Add Python to PATH"
-        - Restart computer
+Open **PowerShell as Administrator** and run:
 
-        2. **Node.js 20+ (LTS)**
-        - Download: https://nodejs.org/
-        - Restart computer
+1. **Install Node.js (LTS):**
+   ```powershell
+   winget install OpenJS.NodeJS.LTS
+   ```
 
-        3. **MySQL 8.0+**
-        - Download: https://dev.mysql.com/downloads/mysql/
-        - Password: `root`
-        - ✅ Check "Install as Windows Service"
-        - Restart computer
+2. **Install MySQL Server:**
+   ```powershell
+   winget install Oracle.MySQL
+   ```
 
-        4. **Redis 7+**
-        - Download: https://github.com/microsoftarchive/redis/releases
-        - Extract to: `C:\Redis\`
+3. **Set Script Execution Policy:**
+   ```powershell
+   Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+   ```
 
-        #### Verify Installation
+4. **Install Python 3.11:**
+   ```powershell
+   winget install Python.Python.3.11
+   ```
 
-        ```powershell
-        python --version
-        node --version
-        npm --version
-        mysql --version
-        redis-cli --version
-        ```
+5. **Verify Python pip:**
+   ```powershell
+   python -m pip
+   ```
 
-        All should show version numbers.
+6. **Install Python Dependencies:**
+   ```powershell
+   py -3.11 -m pip install -r requirements.txt
+   ```
 
-        ---
+7. **Install Frontend Dependencies:**
+   ```powershell
+   cd frontend
+   npm install --legacy-peer-deps
+   ```
 
-        ## Quick Start
+8. **Configure & Start MySQL Database:**
+   Go to the MySQL installation directory:
+   ```powershell
+   cd "C:\Program Files\MySQL\MySQL Server 8.4\bin"
+   ```
+   Install the service, start the service, and initialize the database in insecure mode:
+   ```powershell
+   mysqld --install MySQL80
+   net start MySQL80
+   mysqld --initialize-insecure
+   ```
 
-        ### Step 1: Install 4 Apps (45 minutes)
+9. **Install Redis 7+:**
+   - Download: https://github.com/microsoftarchive/redis/releases
+   - Extract to: `C:\Redis\`
 
-        Follow the installation steps above. **Remember to restart after each app.**
+#### Verify Installation
 
-        ### Step 2: Run Setup (5 minutes)
+```powershell
+python --version
+node --version
+npm --version
+mysql --version
+redis-cli --version
+```
 
-        Open PowerShell in your project folder:
+All should show version numbers.
 
-        ```powershell
-        .\setup-no-docker.ps1
-        ```
+#### Dependency Installation Commands
 
-        Wait for completion message.
+**Python Packages:**
+```powershell
+py -3.11 -m pip install -r requirements.txt
+```
 
-        ### Step 3: Start Services (3 PowerShell Windows)
+**Frontend Packages:**
+```powershell
+cd frontend
+npm install --legacy-peer-deps
+```
 
-        **Terminal 1 — Redis:**
-        ```powershell
-        C:\Redis\redis-server.exe
-        ```
-        Should show: `Ready to accept connections`
+---
 
-        **Terminal 2 — Backend:**
-        ```powershell
-        cd backend
-        uvicorn app.main:app --reload
-        ```
-        Should show: `Uvicorn running on http://0.0.0.0:8000`
+## Quick Start
 
-        **Terminal 3 — Frontend:**
-        ```powershell
-        cd frontend
-        npm run dev
-        ```
-        Should show: `Local: http://localhost:5173`
+### Step 1: Install 4 Apps (45 minutes)
 
-        ### Step 4: Open Browser
+Follow the installation steps above. **Remember to restart after each app.**
 
-        Go to: **http://localhost:5173**
+### Step 2: Run Setup (5 minutes)
+
+Open PowerShell in your project folder:
+
+```powershell
+.\setup-no-docker.ps1
+```
+
+Wait for completion message.
+
+### Step 3: Start Services (3 PowerShell Windows)
+
+**Terminal 1 — Redis:**
+```powershell
+C:\Redis\redis-server.exe
+```
+Should show: `Ready to accept connections`
+
+**Terminal 2 — Backend:**
+```powershell
+cd backend
+uvicorn app.main:app --reload
+```
+Should show: `Uvicorn running on http://0.0.0.0:8000`
+
+**Terminal 3 — Frontend:**
+```powershell
+cd frontend
+npm run dev
+```
+Should show: `Local: http://localhost:5173`
+
+### Step 4: Open Browser
+
+Go to: **http://localhost:5173**
 
 ---
 

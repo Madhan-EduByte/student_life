@@ -129,7 +129,7 @@ class AIService:
             if prov == "gemini":
                 # Use new google.genai SDK — try each model in priority order
                 from google import genai as _genai
-                client = _genai.Client(api_key=settings.GEMINI_API_KEY)
+                client = _genai.Client(api_key=settings.GEMINI_API_KEY, http_options={'timeout': 15000})
                 working_model = None
                 has_quota_error = False
                 fallback_model = None
@@ -155,8 +155,17 @@ class AIService:
                             if not fallback_model:
                                 fallback_model = model_name
                             continue
+                        elif "503" in err_str or "UNAVAILABLE" in err_str or "demand" in err_str.lower():
+                            # Temporary service unavailable / high demand — key is valid
+                            logger.warning(f"Gemini model {model_name} temporarily unavailable (503), trying next...")
+                            has_quota_error = True
+                            if not fallback_model:
+                                fallback_model = model_name
+                            continue
                         else:
                             logger.warning(f"Gemini model {model_name} error: {err_str[:100]}")
+                            if not fallback_model:
+                                fallback_model = model_name
                             continue
 
                 if not working_model and has_quota_error:
@@ -169,7 +178,7 @@ class AIService:
                     return True
                 else:
                     logger.warning("No working Gemini model found for this API key.")
-                    self._key_validity_cache[prov] = (False, current_key)
+                    # Do NOT cache False for transient or network failures unless API key is explicitly invalid
                     return False
             else:
                 from openai import OpenAI
@@ -200,18 +209,39 @@ class AIService:
                 if base_url:
                     client_args["base_url"] = base_url
                 client = OpenAI(**client_args)
-                response = client.chat.completions.create(
-                    model=model_name,
-                    messages=[{"role": "user", "content": "Ping"}],
-                    max_tokens=5,
-                )
-                is_valid = response is not None and len(response.choices) > 0
-                self._key_validity_cache[prov] = (is_valid, current_key)
-                return is_valid
+                
+                try:
+                    response = client.chat.completions.create(
+                        model=model_name,
+                        messages=[{"role": "user", "content": "Ping"}],
+                        max_tokens=5,
+                    )
+                    is_valid = response is not None and len(response.choices) > 0
+                    self._key_validity_cache[prov] = (is_valid, current_key)
+                    return is_valid
+                except Exception as api_err:
+                    err_str = str(api_err).lower()
+                    is_bad_key = any(x in err_str for x in ["401", "403", "api_key_invalid", "unauthorized", "invalid key", "credential"])
+                    if is_bad_key:
+                        logger.warning(f"API key for provider '{prov}' is invalid: {api_err}")
+                        self._key_validity_cache[prov] = (False, current_key)
+                        return False
+                    # Quota/Rate limits (429) or Service Unavailable (503) -> key is valid
+                    is_transient_or_quota = any(x in err_str for x in ["429", "503", "rate_limit", "quota", "unavailable", "timeout", "connection"])
+                    if is_transient_or_quota:
+                        logger.warning(f"Provider '{prov}' returned quota/transient warning during validation: {api_err}")
+                        self._key_validity_cache[prov] = (True, current_key)  # Key is working, try using it
+                        return True
+                    
+                    logger.warning(f"Provider '{prov}' connection failed: {api_err}")
+                    return False
 
         except Exception as e:
             logger.warning(f"Connection test failed for provider '{prov}': {e}")
-            self._key_validity_cache[prov] = (False, current_key)
+            err_str = str(e).lower()
+            is_bad_key = any(x in err_str for x in ["401", "403", "api_key_invalid", "unauthorized", "invalid key", "credential"])
+            if is_bad_key:
+                self._key_validity_cache[prov] = (False, current_key)
             return False
 
     async def get_active_validated_provider(self) -> Optional[str]:
@@ -325,7 +355,7 @@ Respond ONLY with valid JSON."""
         """Generate response using Google Gemini API (google.genai SDK)."""
         try:
             from google import genai as _genai
-            client = _genai.Client(api_key=settings.GEMINI_API_KEY)
+            client = _genai.Client(api_key=settings.GEMINI_API_KEY, http_options={'timeout': 60000})
 
             # Use the cached working model from validation, or auto-detect
             model_candidates = [self._gemini_working_model] if self._gemini_working_model else []
