@@ -1,13 +1,11 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { HiLightningBolt, HiAcademicCap, HiMap, HiEye, HiChartBar, HiUserGroup } from 'react-icons/hi';
+import { HiAcademicCap, HiMap, HiEye } from 'react-icons/hi';
 import useAuthStore from '../store/authStore';
 
 const features = [
-  { icon: <HiLightningBolt size={24} />, title: '6-Question AI Engine', desc: 'Answer just 6 smart questions and get a comprehensive career roadmap powered by advanced AI.', color: '#6366f1' },
-  { icon: <HiMap size={24} />, title: 'Living Career Roadmap', desc: 'Your roadmap evolves every 6 months, adapting to industry trends and your progress.', color: '#d946ef' },
+  { icon: <HiMap size={24} />, title: 'Living Career CareerGuide', desc: 'Your careerGuide evolves every 6 months, adapting to industry trends and your progress.', color: '#d946ef' },
   { icon: <HiAcademicCap size={24} />, title: 'College DNA Matching', desc: 'Match with 15,000+ colleges worldwide based on your profile, budget, and goals.', color: '#22c55e' },
-  { icon: <HiChartBar size={24} />, title: 'Future-Proof Score', desc: 'Know the automation risk and 20-year salary projection for any career path.', color: '#f59e0b' },
   { icon: <HiEye size={24} />, title: 'Career Simulation', desc: 'Shadow any profession through AI-powered career simulations before choosing.', color: '#ec4899' },
 ];
 
@@ -34,14 +32,15 @@ function Home() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           {/* Badge */}
+          {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary-500/30 bg-primary-600/10 mb-8"
+            className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-primary-500/30 bg-primary-600/10 mb-6 sm:mb-8"
           >
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-sm text-primary-300 font-medium">AI-Powered Career Guidance</span>
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse animate-duration-1000" />
+            <span className="text-xs sm:text-sm text-primary-300 font-semibold tracking-wide uppercase">AI-Powered Career Guidance</span>
           </motion.div>
 
           {/* Heading */}
@@ -49,7 +48,7 @@ function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-5xl sm:text-6xl lg:text-7xl font-display font-bold leading-tight mb-6"
+            className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-display font-black leading-[1.1] sm:leading-tight mb-6 tracking-tight"
           >
             Your <span className="gradient-text">Destiny</span>,{' '}
             <br className="hidden sm:block" />
@@ -61,9 +60,9 @@ function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-xl text-surface-400 max-w-3xl mx-auto mb-10 leading-relaxed"
+            className="text-sm sm:text-lg md:text-xl text-surface-400 max-w-3xl mx-auto mb-8 sm:mb-12 leading-relaxed px-2 sm:px-0"
           >
-            Answer 6 questions. Get a precise, living career roadmap — matched colleges,
+            Answer a few questions. Get a precise, living career careerGuide — matched colleges,
             courses, career paths, and weekly milestones — updated for life.
           </motion.p>
 
@@ -72,19 +71,19 @@ function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 px-4 sm:px-0"
           >
             {!isAuthenticated ? (
-              <Link to="/signup" className="btn-primary text-lg px-8 py-4" id="hero-cta">
+              <Link to="/signup" className="btn-primary text-sm sm:text-base md:text-lg px-6 py-3.5 sm:px-8 sm:py-4 w-full sm:w-auto text-center font-bold tracking-wide shadow-lg hover:shadow-primary-500/10 active:scale-95 transition-all" id="hero-cta">
                 Start Your Journey →
               </Link>
             ) : (
-              <Link to="/dashboard" className="btn-primary text-lg px-8 py-4" id="hero-cta">
+              <Link to="/dashboard" className="btn-primary text-sm sm:text-base md:text-lg px-6 py-3.5 sm:px-8 sm:py-4 w-full sm:w-auto text-center font-bold tracking-wide shadow-lg hover:shadow-primary-500/10 active:scale-95 transition-all" id="hero-cta">
                 Go to Dashboard →
               </Link>
             )}
-            <Link to="/simulation" className="btn-secondary text-lg px-8 py-4" id="hero-simulate">
-              Try Career Simulation
+            <Link to="/careerSimulate" className="btn-secondary text-sm sm:text-base md:text-lg px-6 py-3.5 sm:px-8 sm:py-4 w-full sm:w-auto text-center font-bold tracking-wide active:scale-95 transition-all" id="hero-simulate">
+              Try Career Simulate
             </Link>
           </motion.div>
 
@@ -93,12 +92,12 @@ function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 max-w-2xl mx-auto"
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mt-16 sm:mt-24 max-w-4xl mx-auto border-t border-white/5 pt-10"
           >
             {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-2xl md:text-3xl font-display font-bold gradient-text">{stat.value}</p>
-                <p className="text-sm text-surface-500 mt-1">{stat.label}</p>
+              <div key={stat.label} className="text-center p-3 rounded-xl bg-white/[0.01] border border-white/[0.03] backdrop-blur-md">
+                <p className="text-3xl sm:text-4xl md:text-5xl font-display font-extrabold gradient-text tracking-tight">{stat.value}</p>
+                <p className="text-[10px] sm:text-xs md:text-sm font-semibold tracking-wider text-surface-500 mt-1 uppercase">{stat.label}</p>
               </div>
             ))}
           </motion.div>
@@ -181,8 +180,8 @@ function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { step: '01', title: 'Answer 6 Questions', desc: 'Tell us about your interests, strengths, stream preference, education, budget, and location.', icon: '🎯' },
-              { step: '02', title: 'AI Generates Your Roadmap', desc: 'Our AI engine analyzes your inputs against 2,000+ careers and 15,000+ colleges.', icon: '🤖' },
+              { step: '01', title: 'Answer Few Questions', desc: 'Tell us about your interests, strengths, stream preference, education, budget, and location.', icon: '🎯' },
+              { step: '02', title: 'AI Generates Your CareerGuide', desc: 'Our AI engine analyzes your inputs against 2,000+ careers and 15,000+ colleges.', icon: '🤖' },
               { step: '03', title: 'Follow Your Living Path', desc: 'Get weekly milestones, matched colleges, and career insights that update every 6 months.', icon: '🚀' },
             ].map((item, index) => (
               <motion.div
@@ -203,18 +202,7 @@ function Home() {
             ))}
           </div>
 
-          {/* CTA */}
-          <div className="text-center mt-16">
-            {!isAuthenticated ? (
-              <Link to="/signup" className="btn-primary text-lg px-10 py-4" id="how-it-works-cta">
-                Begin Your Assessment →
-              </Link>
-            ) : (
-              <Link to="/dashboard" className="btn-primary text-lg px-10 py-4" id="how-it-works-cta">
-                View Your Dashboard →
-              </Link>
-            )}
-          </div>
+
         </div>
       </section>
     </div>

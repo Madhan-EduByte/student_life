@@ -7,7 +7,7 @@ export function useAuth() {
   const navigate = useNavigate();
   const { user, isAuthenticated, setAuth, logout: clearAuth, setLoading } = useAuthStore();
 
-  const login = useCallback(async (email, password, redirectTo = '/roadmap') => {
+  const login = useCallback(async (email, password, redirectTo = '/careerGuide') => {
     setLoading(true);
     try {
       console.log('🔐 Login attempt:', { email });
@@ -93,7 +93,7 @@ export function useAuth() {
       }
       await authService.register(data);
       // Auto-login after registration
-      const redirectTo = '/roadmap';
+      const redirectTo = '/careerGuide';
       const loginResult = await login(data.email, data.password, redirectTo);
       
       if (loginResult.success) {

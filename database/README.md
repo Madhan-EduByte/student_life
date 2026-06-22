@@ -4,11 +4,11 @@ This folder contains all the SQL initialization scripts, migration logic referen
 
 ## 🗄️ Database Overview
 
-The DestinAI database is designed to be highly relational and optimized for AI-driven roadmap generation. It currently consists of **14 core tables** that manage users, educational data, AI-generated roadmaps, and career intelligence.
+The DestinAI database is designed to be highly relational and optimized for AI-driven career_guide generation. It currently consists of **14 core tables** that manage users, educational data, AI-generated career_guides, and career intelligence.
 
 ### Files in this Directory
 - `init.sql`: The primary initialization script to create the schema and relationships.
-- `seed_users.sql`: Populates initial test accounts (Student, Admin), along with their dummy student profiles, active AI roadmaps, and milestones.
+- `seed_users.sql`: Populates initial test accounts (Student, Admin), along with their dummy student profiles, active AI career_guides, and milestones.
 - `seed_colleges.sql`: Contains 15,000+ global colleges (currently seeded with sample institutions), their courses, and ranking scores.
 - `seed_careers.sql`: Contains base streams, professions, and their associated future-proof metrics.
 
@@ -45,14 +45,14 @@ This powers the "Future-proof Career Score".
 | **`careers`** | `id`, `title`, `average_salary_entry` | Master directory of professions (Software Engineer, Data Scientist, Doctor, etc.). |
 | **`career_scores`** | `id`, `career_id`, `automation_risk`, `future_proof_score` | Evaluates exact AI replacement risk and long-term salary projections to guide students safely. |
 
-### 5. The Living Roadmap
+### 5. The Living CareerGuide
 The heart of the application. These tables store the AI's output and track student progress.
 
 | Table | Key Columns | Purpose / How it helps |
 |---|---|---|
-| **`roadmaps`** | `id`, `user_id`, `career_path`, `version` | The master record of a student's AI-generated career path. Tracks the specific model used (e.g., Gemini). |
-| **`milestones`** | `id`, `roadmap_id`, `week_number`, `is_completed` | The **Micro-milestone engine**. Breaks the multi-year roadmap into weekly actionable tasks. |
-| **`roadmap_history`** | `id`, `roadmap_id`, `version`, `changes_summary` | Tracks changes and versioning when the AI auto-updates the roadmap every 6 months to stay relevant. |
+| **`career_guides`** | `id`, `user_id`, `career_path`, `version` | The master record of a student's AI-generated career path. Tracks the specific model used (e.g., Gemini). |
+| **`milestones`** | `id`, `career_guide_id`, `week_number`, `is_completed` | The **Micro-milestone engine**. Breaks the multi-year career_guide into weekly actionable tasks. |
+| **`career_guide_history`** | `id`, `career_guide_id`, `version`, `changes_summary` | Tracks changes and versioning when the AI auto-updates the career_guide every 6 months to stay relevant. |
 
 ### 6. Tracking & Analytics
 Helps monitor application health and student success over time.
@@ -67,7 +67,7 @@ Helps monitor application health and student success over time.
 ## ⚙️ How It Helps the DestinAI Project
 
 1. **Prompt Engineering Storage**: By isolating `student_profiles` answers, the backend can easily pull exact answers to format structured prompts for the Gemini / OpenAI GPT-4 APIs.
-2. **Living Roadmap Logic**: The `roadmaps` table and `roadmap_history` track versions. A background CRON job can easily query roadmaps older than 6 months and trigger an automatic recalculation.
+2. **Living CareerGuide Logic**: The `career_guides` table and `career_guide_history` track versions. A background CRON job can easily query career_guides older than 6 months and trigger an automatic recalculation.
 3. **Fast Filtering**: Breaking down `colleges` and `college_courses` into indexed relational tables allows the frontend to quickly filter massive datasets instantly without overloading the AI.
 4. **Role Isolation**: The `parent_profiles` table ensures strict data privacy via the Family Compass feature. Parents view specific dashboards without altering the student's milestone progress.
 
@@ -95,20 +95,3 @@ python init_db.py
 ```
 
 > **Note:** The `init_db.py` script automatically reads the `.sql` files in this directory to populate the 20 colleges, 20 careers, and test accounts.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-https://dashboard.aishe.gov.in/hedirectory/#/hedirectory/standaloneDetails/S/3

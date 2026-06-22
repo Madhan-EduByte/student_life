@@ -11,9 +11,9 @@ from app.models import (
     College,
     CollegeCourse,
     CollegeScore,
-    Roadmap,
+    CareerGuide,
     Milestone,
-    RoadmapHistory,
+    CareerGuideHistory,
     StudentOutcome,
     SessionLog,
 )

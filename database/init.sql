@@ -40,6 +40,9 @@ CREATE TABLE IF NOT EXISTS student_profiles (
   education_level VARCHAR(100) DEFAULT NULL,
   budget_range VARCHAR(100) DEFAULT NULL,
   location_preference VARCHAR(255) DEFAULT NULL,
+  work_life_balance VARCHAR(50) DEFAULT NULL,
+  risk_tolerance VARCHAR(50) DEFAULT NULL,
+  interaction_style VARCHAR(50) DEFAULT NULL,
   date_of_birth DATETIME DEFAULT NULL,
   gender VARCHAR(20) DEFAULT NULL,
   city VARCHAR(100) DEFAULT NULL,
@@ -178,8 +181,8 @@ CREATE TABLE IF NOT EXISTS college_scores (
   FOREIGN KEY (college_id) REFERENCES colleges(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ─── Roadmaps ───────────────────────────────────────
-CREATE TABLE IF NOT EXISTS roadmaps (
+-- ─── CareerGuides ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS career_guides (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   title VARCHAR(500) NOT NULL,
@@ -202,7 +205,7 @@ CREATE TABLE IF NOT EXISTS roadmaps (
 -- ─── Milestones ─────────────────────────────────────
 CREATE TABLE IF NOT EXISTS milestones (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  roadmap_id INT NOT NULL,
+  career_guide_id INT NOT NULL,
   week_number INT NOT NULL,
   title VARCHAR(500) NOT NULL,
   description TEXT DEFAULT NULL,
@@ -216,27 +219,27 @@ CREATE TABLE IF NOT EXISTS milestones (
   `order` INT DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (roadmap_id) REFERENCES roadmaps(id) ON DELETE CASCADE
+  FOREIGN KEY (career_guide_id) REFERENCES career_guides(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ─── Roadmap History ────────────────────────────────
-CREATE TABLE IF NOT EXISTS roadmap_history (
+-- ─── CareerGuide History ────────────────────────────────
+CREATE TABLE IF NOT EXISTS career_guide_history (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  roadmap_id INT NOT NULL,
+  career_guide_id INT NOT NULL,
   version INT NOT NULL,
   changes_summary TEXT DEFAULT NULL,
   previous_data TEXT DEFAULT NULL,
   updated_data TEXT DEFAULT NULL,
   reason VARCHAR(255) DEFAULT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (roadmap_id) REFERENCES roadmaps(id) ON DELETE CASCADE
+  FOREIGN KEY (career_guide_id) REFERENCES career_guides(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ─── Student Outcomes ───────────────────────────────
 CREATE TABLE IF NOT EXISTS student_outcomes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
-  roadmap_id INT DEFAULT NULL,
+  career_guide_id INT DEFAULT NULL,
   outcome_type VARCHAR(50) DEFAULT NULL,
   college_enrolled VARCHAR(500) DEFAULT NULL,
   course_enrolled VARCHAR(500) DEFAULT NULL,
@@ -245,7 +248,7 @@ CREATE TABLE IF NOT EXISTS student_outcomes (
   feedback TEXT DEFAULT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (roadmap_id) REFERENCES roadmaps(id) ON DELETE SET NULL
+  FOREIGN KEY (career_guide_id) REFERENCES career_guides(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ─── Session Logs ───────────────────────────────────

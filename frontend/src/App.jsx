@@ -5,7 +5,8 @@ import Footer from './components/common/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
-import Roadmap from './pages/Roadmap';
+import ForgotPassword from './pages/ForgotPassword';
+import CareerGuide from './pages/CareerGuide';
 import CollegeMatch from './pages/CollegeMatch';
 import Simulation from './pages/Simulation';
 import Dashboard from './pages/Dashboard';
@@ -24,9 +25,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
-            <Route path="/roadmap" element={<Roadmap />} />
-            <Route path="/colleges" element={<CollegeMatch />} />
-            <Route path="/simulation" element={<Simulation />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/careerGuide" element={<CareerGuide />} />
+            <Route path="/collegesSimulate" element={<CollegeMatch />} />
+            <Route path="/careerSimulate" element={<Simulation />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />

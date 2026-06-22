@@ -25,6 +25,9 @@ class UserCreate(BaseModel):
     education_level: Optional[str] = None
     budget_range: Optional[str] = None
     location_preference: Optional[str] = None
+    work_life_balance: Optional[str] = None
+    risk_tolerance: Optional[str] = None
+    interaction_style: Optional[str] = None
 
 
 class UserLogin(BaseModel):

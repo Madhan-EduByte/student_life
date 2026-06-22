@@ -1,6 +1,6 @@
 """
-DestinAI — Roadmap Schemas
-Pydantic schemas for roadmap and milestone endpoints.
+DestinAI — CareerGuide Schemas
+Pydantic schemas for career_guide and milestone endpoints.
 """
 
 from datetime import datetime
@@ -11,8 +11,8 @@ from pydantic import BaseModel, field_validator
 from app.schemas.student import StudentProfileCreate
 
 
-class RoadmapGenerate(BaseModel):
-    """Request to generate an AI roadmap from 6 inputs."""
+class CareerGuideGenerate(BaseModel):
+    """Request to generate an AI career_guide from 6 inputs."""
 
     career_inputs: StudentProfileCreate
 
@@ -37,8 +37,8 @@ class MilestoneResponse(BaseModel):
         from_attributes = True
 
 
-class RoadmapResponse(BaseModel):
-    """Roadmap response schema."""
+class CareerGuideResponse(BaseModel):
+    """CareerGuide response schema."""
 
     id: int
     user_id: int
@@ -53,6 +53,7 @@ class RoadmapResponse(BaseModel):
     is_active: bool
     next_update_at: Optional[datetime] = None
     milestones: List[MilestoneResponse] = []
+    alternative_careers: Optional[List[str]] = []
     created_at: datetime
     updated_at: datetime
 
@@ -63,14 +64,31 @@ class RoadmapResponse(BaseModel):
             return datetime.utcnow()
         return v
 
+    @field_validator('alternative_careers', mode='before')
+    @classmethod
+    def parse_alternative_careers(cls, v):
+        """Deserialize JSON string or list to a Python list."""
+        if v is None:
+            return []
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            try:
+                import json as _json
+                parsed = _json.loads(v)
+                return parsed if isinstance(parsed, list) else []
+            except Exception:
+                return []
+        return []
+
     class Config:
         from_attributes = True
 
 
-class RoadmapListResponse(BaseModel):
-    """List of roadmaps for a user."""
+class CareerGuideListResponse(BaseModel):
+    """List of career_guides for a user."""
 
-    roadmaps: List[RoadmapResponse]
+    career_guides: List[CareerGuideResponse]
     total: int
 
 
@@ -80,8 +98,8 @@ class MilestoneUpdate(BaseModel):
     is_completed: bool
 
 
-class RoadmapHistoryResponse(BaseModel):
-    """Roadmap version history."""
+class CareerGuideHistoryResponse(BaseModel):
+    """CareerGuide version history."""
 
     id: int
     version: int

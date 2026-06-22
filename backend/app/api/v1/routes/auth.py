@@ -64,9 +64,33 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
             preferred_stream=user_data.preferred_stream,
             education_level=user_data.education_level,
             budget_range=user_data.budget_range,
-            location_preference=user_data.location_preference
+            location_preference=user_data.location_preference,
+            work_life_balance=user_data.work_life_balance,
+            risk_tolerance=user_data.risk_tolerance,
+            interaction_style=user_data.interaction_style,
         )
         db.add(profile)
+        db.flush()
+
+        # Auto-generate initial career career_guide inside the registration transaction if inputs are provided
+        if user_data.interest_areas:
+            try:
+                from app.services.career_guide_service import career_guide_service
+                career_inputs = {
+                    "interest_areas": user_data.interest_areas,
+                    "strengths": user_data.strengths,
+                    "preferred_stream": user_data.preferred_stream,
+                    "education_level": user_data.education_level,
+                    "budget_range": user_data.budget_range,
+                    "location_preference": user_data.location_preference,
+                    "work_life_balance": user_data.work_life_balance,
+                    "risk_tolerance": user_data.risk_tolerance,
+                    "interaction_style": user_data.interaction_style,
+                }
+                await career_guide_service.generate_career_guide(db, user.id, career_inputs)
+            except Exception as rm_err:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to auto-generate career_guide on register: {rm_err}")
 
     db.commit()
     db.refresh(user)

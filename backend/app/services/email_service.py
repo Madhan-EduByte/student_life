@@ -70,7 +70,7 @@ You've taken the first step toward discovering your ideal career path.
 
 Here's what you can do next:
 1. Complete the 6-question career assessment
-2. Explore your personalized AI roadmap
+2. Explore your personalized AI career_guide
 3. Discover matched colleges and courses
 4. Start completing weekly milestones
 
@@ -91,7 +91,7 @@ The DestinAI Team
         <h3>What's next?</h3>
         <ol>
             <li>Complete the 6-question career assessment</li>
-            <li>Explore your personalized AI roadmap</li>
+            <li>Explore your personalized AI career_guide</li>
             <li>Discover matched colleges and courses</li>
             <li>Start completing weekly milestones</li>
         </ol>

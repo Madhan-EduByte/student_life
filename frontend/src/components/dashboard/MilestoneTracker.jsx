@@ -105,7 +105,7 @@ function MilestoneTracker({ milestones = [], onToggle }) {
 
       {total === 0 && (
         <div className="text-center py-8">
-          <p className="text-surface-500 text-sm">No milestones yet. Generate a roadmap first!</p>
+          <p className="text-surface-500 text-sm">No milestones yet. Generate a careerGuide first!</p>
         </div>
       )}
     </div>

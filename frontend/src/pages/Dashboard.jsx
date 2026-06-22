@@ -10,7 +10,7 @@ import useAuthStore from '../store/authStore';
 const demoMilestones = Array.from({ length: 12 }, (_, i) => ({
   id: i + 1, week_number: i + 1,
   title: `Week ${i + 1} Milestone`,
-  description: `Complete tasks for week ${i + 1} of your career roadmap.`,
+  description: `Complete tasks for week ${i + 1} of your career careerGuide.`,
   category: i < 4 ? 'learning' : i < 8 ? 'project' : 'networking',
   priority: i < 4 ? 'high' : 'medium',
   estimated_hours: 8 + Math.floor(Math.random() * 5),
@@ -22,26 +22,26 @@ function Dashboard() {
   const token = useAuthStore(state => state.accessToken || state.access_token);
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
-  const [roadmap, setRoadmap] = useState(null);
+  const [careerGuide, setCareerGuide] = useState(null);
 
   useEffect(() => {
-    const fetchRoadmap = async () => {
+    const fetchCareerGuide = async () => {
       if (!token) return;
       try {
-        const res = await fetch(`${baseUrl}/roadmap`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${baseUrl}/career-guide`, { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) {
           const data = await res.json();
-          const active = Array.isArray(data) ? data[0] : (data.roadmaps ? data.roadmaps[0] : data);
-          if (active && active.milestones) setRoadmap(active);
+          const active = Array.isArray(data) ? data[0] : (data.careerGuides ? data.careerGuides[0] : data);
+          if (active && active.milestones) setCareerGuide(active);
         }
       } catch (err) {
-        console.error('Failed to fetch dashboard roadmap:', err);
+        console.error('Failed to fetch dashboard careerGuide:', err);
       }
     };
-    fetchRoadmap();
+    fetchCareerGuide();
   }, [baseUrl, token]);
 
-  const activeMilestones = roadmap?.milestones || demoMilestones;
+  const activeMilestones = careerGuide?.milestones || demoMilestones;
   const completed = activeMilestones.filter(m => m.is_completed).length;
   const total = activeMilestones.length;
   const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -49,7 +49,7 @@ function Dashboard() {
   const stats = [
     { icon: <HiClipboardList size={20} />, label: 'Milestones Done', value: `${completed}/${total}`, color: '#6366f1' },
     { icon: <HiTrendingUp size={20} />, label: 'Progress', value: `${progressPercent}%`, color: '#22c55e' },
-    { icon: <HiMap size={20} />, label: 'Career Path', value: roadmap?.career_path || 'Software Eng.', color: '#d946ef' },
+    { icon: <HiMap size={20} />, label: 'Career Path', value: careerGuide?.career_path || 'Software Eng.', color: '#d946ef' },
     { icon: <HiAcademicCap size={20} />, label: 'Matched Colleges', value: '10', color: '#f59e0b' },
   ];
 
@@ -82,7 +82,7 @@ function Dashboard() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
             className="glass-card p-6 flex flex-col items-center justify-center">
             <h3 className="font-display font-bold text-white mb-6">Your Career Score</h3>
-            <FutureProofScore score={roadmap?.future_proof_score || 78} size="lg" />
+            <FutureProofScore score={careerGuide?.future_proof_score || 78} size="lg" />
             <p className="text-xs text-surface-500 mt-4 text-center">Based on automation risk, market demand, and salary growth</p>
           </motion.div>
         </div>

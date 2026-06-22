@@ -42,7 +42,7 @@ class User(Base):
     student_profile = relationship(
         "StudentProfile", back_populates="user", uselist=False, cascade="all, delete"
     )
-    roadmaps = relationship("Roadmap", back_populates="user", cascade="all, delete")
+    career_guides = relationship("CareerGuide", back_populates="user", cascade="all, delete")
 
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}', role='{self.role}')>"

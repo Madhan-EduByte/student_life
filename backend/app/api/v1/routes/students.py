@@ -39,26 +39,35 @@ async def get_profile(
     # Self-healing: Populate demo users if their profile is currently blank
     if not profile.interest_areas and current_user.email in ['student@example.com', 'student2@example.com', 'student3@example.com']:
         if current_user.email == 'student@example.com':
-            profile.interest_areas = 'technology, coding, logic'
-            profile.strengths = 'problem-solving, mathematics'
-            profile.preferred_stream = 'science'
-            profile.education_level = '12th Grade'
-            profile.budget_range = '1-5 Lakhs'
-            profile.location_preference = 'Bangalore, India'
+            profile.interest_areas = 'technical, analytical'
+            profile.strengths = 'technical_systems, mathematical'
+            profile.preferred_stream = 'technology'
+            profile.education_level = 'bachelor'
+            profile.budget_range = 'high'
+            profile.location_preference = 'major_hub'
+            profile.work_life_balance = 'standard'
+            profile.risk_tolerance = 'moderate'
+            profile.interaction_style = 'balanced'
         elif current_user.email == 'student2@example.com':
-            profile.interest_areas = 'business, marketing, finance'
-            profile.strengths = 'leadership, communication'
-            profile.preferred_stream = 'commerce'
-            profile.education_level = '12th Grade'
-            profile.budget_range = '5-10 Lakhs'
-            profile.location_preference = 'Mumbai, India'
+            profile.interest_areas = 'enterprising, organizational'
+            profile.strengths = 'communication, interpersonal'
+            profile.preferred_stream = 'business'
+            profile.education_level = 'bachelor'
+            profile.budget_range = 'high'
+            profile.location_preference = 'major_hub'
+            profile.work_life_balance = 'hustle'
+            profile.risk_tolerance = 'high'
+            profile.interaction_style = 'collaborative'
         elif current_user.email == 'student3@example.com':
-            profile.interest_areas = 'art, design, psychology'
-            profile.strengths = 'creativity, empathy'
-            profile.preferred_stream = 'arts'
-            profile.education_level = '12th Grade'
-            profile.budget_range = '10-15 Lakhs'
-            profile.location_preference = 'Delhi, India'
+            profile.interest_areas = 'creative, social'
+            profile.strengths = 'creative_spatial, interpersonal'
+            profile.preferred_stream = 'creative_arts'
+            profile.education_level = 'bachelor'
+            profile.budget_range = 'medium'
+            profile.location_preference = 'remote'
+            profile.work_life_balance = 'flexible'
+            profile.risk_tolerance = 'moderate'
+            profile.interaction_style = 'balanced'
         db.commit()
         db.refresh(profile)
 
@@ -79,9 +88,40 @@ async def update_profile(
         profile = StudentProfile(user_id=current_user.id)
         db.add(profile)
 
-    update_data = profile_data.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(profile, key, value)
+    # Clean and map fields manually to ensure 100% robust data updates
+    raw_data = profile_data.model_dump(exclude_unset=True)
+    
+    # Explicit mapping for frontend keys
+    if "interests" in raw_data and raw_data["interests"] is not None:
+        val = raw_data["interests"]
+        profile.interest_areas = ", ".join(val) if isinstance(val, list) else str(val)
+    elif "interest_areas" in raw_data and raw_data["interest_areas"] is not None:
+        val = raw_data["interest_areas"]
+        profile.interest_areas = ", ".join(val) if isinstance(val, list) else str(val)
+
+    if "strengths" in raw_data and raw_data["strengths"] is not None:
+        val = raw_data["strengths"]
+        profile.strengths = ", ".join(val) if isinstance(val, list) else str(val)
+
+    if "industry_stream" in raw_data and raw_data["industry_stream"] is not None:
+        profile.preferred_stream = raw_data["industry_stream"]
+    elif "preferred_stream" in raw_data and raw_data["preferred_stream"] is not None:
+        profile.preferred_stream = raw_data["preferred_stream"]
+
+    if "budget" in raw_data and raw_data["budget"] is not None:
+        profile.budget_range = raw_data["budget"]
+    elif "budget_range" in raw_data and raw_data["budget_range"] is not None:
+        profile.budget_range = raw_data["budget_range"]
+
+    if "location" in raw_data and raw_data["location"] is not None:
+        profile.location_preference = raw_data["location"]
+    elif "location_preference" in raw_data and raw_data["location_preference"] is not None:
+        profile.location_preference = raw_data["location_preference"]
+
+    # Map other fields
+    for field in ["education_level", "work_life_balance", "risk_tolerance", "interaction_style"]:
+        if field in raw_data and raw_data[field] is not None:
+            setattr(profile, field, raw_data[field])
 
     db.commit()
     db.refresh(profile)

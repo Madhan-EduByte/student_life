@@ -22,13 +22,13 @@ class StudentProfile(Base):
     # ── 6 Career Inputs ──────────────────────────────────
     interest_areas = Column(Text, nullable=True)          # Q1: What are your interests?
     strengths = Column(Text, nullable=True)               # Q2: What are your strengths?
-    preferred_stream = Column(
-        Enum("science", "commerce", "arts", "vocational", name="stream_type"),
-        nullable=True,
-    )                                                     # Q3: Preferred stream
+    preferred_stream = Column(String(100), nullable=True)                                                     # Q3: Preferred stream
     education_level = Column(String(100), nullable=True)  # Q4: Current education level
     budget_range = Column(String(100), nullable=True)     # Q5: Budget range
     location_preference = Column(String(255), nullable=True)  # Q6: Preferred location
+    work_life_balance = Column(String(50), nullable=True)     # Q7: Work-life balance preference
+    risk_tolerance = Column(String(50), nullable=True)        # Q8: Risk tolerance level
+    interaction_style = Column(String(50), nullable=True)     # Q9: Daily interaction style
 
     # ── Additional Profile ───────────────────────────────
     date_of_birth = Column(DateTime, nullable=True)

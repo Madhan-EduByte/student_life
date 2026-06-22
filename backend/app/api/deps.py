@@ -3,9 +3,12 @@ DestinAI — API Dependencies
 Dependency injection for database sessions and authentication.
 """
 
+from typing import Optional
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+
 
 from app.core.database import get_db
 from app.core.security import decode_token
@@ -74,3 +77,24 @@ def require_role(required_role: str):
         return current_user
 
     return role_checker
+
+
+def get_current_user_optional(
+    token: str = Depends(OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """Optionally get the current authenticated user if token is present, else return None."""
+    if not token:
+        return None
+    try:
+        payload = decode_token(token)
+        if payload is None:
+            return None
+        user_id_str = payload.get("sub")
+        if user_id_str is None:
+            return None
+        user_id = int(user_id_str)
+        return db.query(User).filter(User.id == user_id).first()
+    except Exception:
+        return None
+

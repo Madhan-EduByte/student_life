@@ -8,7 +8,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_current_user_optional
 from app.core.database import get_db
 from app.models.user import User
 from app.schemas.college import (
@@ -63,36 +63,56 @@ async def list_colleges(
 
 @router.get("/match")
 async def match_colleges(
-    current_user: User = Depends(get_current_user),
+    location: Optional[str] = Query(None),
+    budget_range: Optional[str] = Query(None),
+    preferred_stream: Optional[str] = Query(None),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
-    """Get AI-matched colleges for the current student."""
+    """Get AI-matched colleges for the student."""
     from app.models.student import StudentProfile
 
-    profile = (
-        db.query(StudentProfile)
-        .filter(StudentProfile.user_id == current_user.id)
-        .first()
-    )
-
     criteria = {}
-    if profile:
+    user_id = 0
+    if current_user:
+        user_id = current_user.id
+        profile = (
+            db.query(StudentProfile)
+            .filter(StudentProfile.user_id == current_user.id)
+            .first()
+        )
+        if profile:
+            criteria = {
+                "location": location or profile.location_preference or "",
+                "budget_range": budget_range or profile.budget_range or "",
+                "preferred_stream": preferred_stream or profile.preferred_stream or "",
+            }
+
+    if not criteria:
         criteria = {
-            "location": profile.location_preference or "",
-            "budget_range": profile.budget_range or "",
-            "preferred_stream": profile.preferred_stream or "",
+            "location": location or "",
+            "budget_range": budget_range or "",
+            "preferred_stream": preferred_stream or "",
         }
 
-    matches = college_service.match_colleges(db, current_user.id, criteria)
+    matches = await college_service.match_colleges(db, user_id, criteria)
 
-    return [
-        {
-            "college": CollegeResponse.model_validate(m["college"]),
-            "match_score": m["match_score"],
-            "match_reasons": m["match_reasons"],
-        }
-        for m in matches
-    ]
+    from app.services.ai_service import ai_service
+    is_real_ai = ai_service.last_used_model != "mock"
+    return {
+        "matches": [
+            {
+                "college": CollegeResponse.model_validate(m["college"]),
+                "match_score": m["match_score"],
+                "match_reasons": m["match_reasons"],
+                "ai_predict_order": m.get("ai_predict_order"),
+            }
+            for m in matches
+        ],
+        "ai_active": is_real_ai,
+        "ai_model": ai_service.last_used_model if is_real_ai else None
+    }
+
 
 
 @router.get("/{college_id}", response_model=CollegeDetailResponse)

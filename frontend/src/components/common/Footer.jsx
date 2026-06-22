@@ -24,9 +24,9 @@ function Footer() {
           <div>
             <h3 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">Quick Links</h3>
             <ul className="space-y-2">
-              <li><Link to="/roadmap" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Career Guide</Link></li>
-              <li><Link to="/colleges" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">College Database</Link></li>
-              <li><Link to="/simulation" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Simulate</Link></li>
+              <li><Link to="/careerGuide" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Career Guide</Link></li>
+              <li><Link to="/collegesSimulate" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Colleges Simulate</Link></li>
+              <li><Link to="/careerSimulate" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Career Simulate</Link></li>
               <li><Link to="/dashboard" className="text-surface-400 hover:text-primary-400 text-sm transition-colors">Dashboard</Link></li>
             </ul>
           </div>
@@ -55,7 +55,7 @@ function Footer() {
         <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-center items-center gap-4">
 
           <p className="text-surface-600 text-xs italic text-center w-full">
-            Built with purpose. Guided by AI. Forged for every student on earth.
+            developed by Future Ready Education Institute (FREI) by: Edubytes
           </p>
         </div>
       </div>

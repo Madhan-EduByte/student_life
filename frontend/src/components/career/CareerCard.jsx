@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { HiTrendingUp, HiBriefcase, HiCurrencyRupee } from 'react-icons/hi';
 import { formatSalary } from '../../utils/helpers';
 
-function CareerCard({ career, onClick, index = 0 }) {
+function CareerCard({ career, onClick, index = 0, matchScore, aiPredictOrder }) {
   const demandColors = {
     high: 'badge-success',
     medium: 'badge-warning',
@@ -18,6 +18,28 @@ function CareerCard({ career, onClick, index = 0 }) {
       className="glass-card-hover cursor-pointer p-6 group"
       id={`career-card-${career.id || index}`}
     >
+      {/* Match Score Badge */}
+      {(matchScore || aiPredictOrder) && (
+        <div className="flex justify-between items-center mb-3">
+          {aiPredictOrder ? (
+            <div className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30">
+              AI Predict #{aiPredictOrder}
+            </div>
+          ) : (
+            <div />
+          )}
+          {matchScore && (
+            <div className="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+              style={{
+                background: matchScore >= 80 ? 'rgba(34,197,94,0.15)' : matchScore >= 60 ? 'rgba(99,102,241,0.15)' : 'rgba(245,158,11,0.15)',
+                color: matchScore >= 80 ? '#4ade80' : matchScore >= 60 ? '#818cf8' : '#fbbf24',
+                border: `1px solid ${matchScore >= 80 ? 'rgba(34,197,94,0.3)' : matchScore >= 60 ? 'rgba(99,102,241,0.3)' : 'rgba(245,158,11,0.3)'}`,
+              }}>
+              {matchScore.toFixed(0)}% Fit
+            </div>
+          )}
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
