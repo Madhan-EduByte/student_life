@@ -14,6 +14,7 @@ import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
 import FAQ from './pages/FAQ';
 import DashboardOverview from './pages/admin/dashboard/DashboardOverview';
+import SmartSearch from './pages/SmartSearch';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="/careerGuide" element={<CareerGuide />} />
             <Route path="/collegesSimulate" element={<CollegeMatch />} />
             <Route path="/careerSimulate" element={<Simulation />} />
+            <Route path="/smartSearch" element={<SmartSearch />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />

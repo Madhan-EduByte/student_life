@@ -69,8 +69,15 @@ async def match_colleges(
     current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
-    """Get AI-matched colleges for the student."""
+    """Get AI-generated college recommendations for the student.
+
+    When a valid AI API key is configured, the AI generates fresh college
+    recommendations entirely from its own world knowledge — no DB rows are
+    fetched. If AI is unavailable, falls back to the existing DB-based
+    matching logic seamlessly.
+    """
     from app.models.student import StudentProfile
+    from app.services.ai_service import ai_service
 
     criteria = {}
     user_id = 0
@@ -86,6 +93,7 @@ async def match_colleges(
                 "location": location or profile.location_preference or "",
                 "budget_range": budget_range or profile.budget_range or "",
                 "preferred_stream": preferred_stream or profile.preferred_stream or "",
+                "interests": profile.interest_areas or "",
             }
 
     if not criteria:
@@ -93,24 +101,68 @@ async def match_colleges(
             "location": location or "",
             "budget_range": budget_range or "",
             "preferred_stream": preferred_stream or "",
+            "interests": "",
         }
 
-    matches = await college_service.match_colleges(db, user_id, criteria)
-
-    from app.services.ai_service import ai_service
-    is_real_ai = ai_service.last_used_model != "mock"
-    return {
-        "matches": [
-            {
-                "college": CollegeResponse.model_validate(m["college"]),
-                "match_score": m["match_score"],
-                "match_reasons": m["match_reasons"],
-                "ai_predict_order": m.get("ai_predict_order"),
+    # ── Try fully AI-generated recommendations first ──────────────────────
+    if ai_service.is_api_configured():
+        ai_colleges = await ai_service.generate_college_recommendations(criteria)
+        if ai_colleges:
+            is_real_ai = ai_service.last_used_model != "mock"
+            matches_out = []
+            for idx, c in enumerate(ai_colleges):
+                matches_out.append({
+                    "college": {
+                        "id": None,
+                        "name": c.get("name", ""),
+                        "university": c.get("university", ""),
+                        "city": c.get("city", ""),
+                        "state": c.get("state", ""),
+                        "country": "India",
+                        "type": c.get("type", ""),
+                        "accreditation": c.get("accreditation"),
+                        "nirf_rank": c.get("nirf_rank"),
+                        "placement_rate": c.get("placement_rate"),
+                        "average_package": c.get("average_package"),
+                        "fee_range_min": c.get("fee_range_min"),
+                        "fee_range_max": c.get("fee_range_max"),
+                        "streams": c.get("stream", []),
+                        "courses": [],
+                        "recommended_courses": [],
+                        "website": None,
+                        "description": c.get("description", ""),
+                        "established_year": None,
+                        "campus_size": None,
+                        "hostel_available": None,
+                        "scholarships_available": None,
+                        "image_url": None,
+                    },
+                    "match_score": c.get("match_score", 80),
+                    "match_reasons": c.get("match_reasons", ["Recommended by AI"]),
+                    "ai_predict_order": idx + 1 if is_real_ai else None,
+                    "ai_generated": True,
+                })
+            return {
+                "matches": matches_out,
+                "ai_active": is_real_ai,
+                "ai_model": ai_service.last_used_model if is_real_ai else None,
+                "ai_generated": True,
             }
-            for m in matches
-        ],
-        "ai_active": is_real_ai,
-        "ai_model": ai_service.last_used_model if is_real_ai else None
+
+        # AI is configured but generation returned nothing — return empty, never load DB
+        return {
+            "matches": [],
+            "ai_active": False,
+            "ai_model": None,
+            "ai_generated": True,
+        }
+
+    # No API key configured — return empty, never load DB
+    return {
+        "matches": [],
+        "ai_active": False,
+        "ai_model": None,
+        "ai_generated": False,
     }
 
 

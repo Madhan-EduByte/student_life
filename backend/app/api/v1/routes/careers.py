@@ -64,7 +64,13 @@ async def match_careers(
     current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
-    """Get AI-matched and ranked careers for a student profile."""
+    """Get AI-generated career recommendations for a student profile.
+
+    When a valid AI API key is configured, the AI generates fresh career
+    recommendations entirely from its own world knowledge — no DB rows are
+    fetched. If AI is unavailable, falls back to the existing DB-based
+    matching logic seamlessly.
+    """
     from app.models.student import StudentProfile
     from app.services.ai_service import ai_service
 
@@ -89,129 +95,73 @@ async def match_careers(
             "preferred_stream": stream or "",
         }
 
-    # Fetch all careers
-    all_careers = db.query(Career).all()
+    # Guard: if no meaningful input at all, skip AI and prompt for profile
+    has_criteria = bool(
+        criteria.get("interests", "").strip() or
+        criteria.get("strengths", "").strip() or
+        criteria.get("preferred_stream", "").strip()
+    )
+    if not has_criteria:
+        return {
+            "matches": [],
+            "ai_active": False,
+            "ai_model": None,
+            "ai_generated": False,
+            "needs_profile": True,
+        }
 
-    # Check if AI is configured
-    if ai_service.is_api_configured() and all_careers:
-        careers_data = []
-        for c in all_careers:
-            careers_data.append({
-                "id": c.id,
-                "title": c.title,
-                "stream": c.stream,
-                "category": c.category,
-                "demand_level": c.demand_level,
-                "average_salary_entry": c.average_salary_entry,
-                "growth_rate": c.growth_rate,
-            })
+    # ── Try fully AI-generated recommendations first ──────────────────────
 
-        ai_predictions = await ai_service.predict_career_matches(careers_data, criteria)
-        if ai_predictions:
-            prediction_map = {p["career_id"]: p for p in ai_predictions}
-            matches = []
-            for c in all_careers:
-                pred = prediction_map.get(c.id)
-                if pred:
-                    score = float(pred.get("match_score", 50.0))
-                    reasons = pred.get("match_reasons", ["Matches your profile"])
-                    
-                    # Only show AI rank badge if a real validated provider succeeded
-                    pred_index = None
-                    if ai_service.last_used_model != "mock":
-                        pred_index = next((idx + 1 for idx, item in enumerate(ai_predictions) if item["career_id"] == c.id), None)
-                        
-                    matches.append({
-                        "career": CareerResponse.model_validate(c),
-                        "match_score": score,
-                        "match_reasons": reasons,
-                        "ai_predict_order": pred_index,
-                    })
-            
-            if ai_service.last_used_model != "mock":
-                matches.sort(key=lambda x: x.get("ai_predict_order") or 999)
-            else:
-                matches.sort(key=lambda x: x["match_score"], reverse=True)
-                
+
+    if ai_service.is_api_configured():
+        ai_careers = await ai_service.generate_career_recommendations(criteria)
+        if ai_careers:
             is_real_ai = ai_service.last_used_model != "mock"
+            matches_out = []
+            for idx, c in enumerate(ai_careers):
+                matches_out.append({
+                    "career": {
+                        "id": None,
+                        "title": c.get("title", ""),
+                        "stream": c.get("stream", ""),
+                        "category": c.get("category", ""),
+                        "description": c.get("description", ""),
+                        "demand_level": c.get("demand_level", ""),
+                        "average_salary_entry": c.get("average_salary_entry"),
+                        "average_salary_mid": None,
+                        "average_salary_senior": None,
+                        "growth_rate": c.get("growth_rate"),
+                        "skills_required": [],
+                        "education_required": None,
+                        "work_environment": None,
+                        "image_url": None,
+                    },
+                    "match_score": c.get("match_score", 80),
+                    "match_reasons": c.get("match_reasons", ["Recommended by AI"]),
+                    "ai_predict_order": idx + 1 if is_real_ai else None,
+                    "ai_generated": True,
+                })
             return {
-                "matches": matches,
+                "matches": matches_out,
                 "ai_active": is_real_ai,
-                "ai_model": ai_service.last_used_model if is_real_ai else None
+                "ai_model": ai_service.last_used_model if is_real_ai else None,
+                "ai_generated": True,
             }
 
-    # Standard database/rule-based matching fallback
-    matches = []
-    pref_stream = criteria.get("preferred_stream", "").lower()
-    interest_words = [w.strip().lower() for w in criteria.get("interests", "").split(",") if w.strip()]
-    strength_words = [w.strip().lower() for w in criteria.get("strengths", "").split(",") if w.strip()]
+        # AI is configured but generation returned nothing — return empty, never load DB
+        return {
+            "matches": [],
+            "ai_active": False,
+            "ai_model": None,
+            "ai_generated": True,
+        }
 
-    for c in all_careers:
-        score = 40.0  # Lower base for better differentiation
-        reasons = []
-
-        # Stream compatibility (30 points max)
-        if pref_stream and c.stream and pref_stream in c.stream.lower():
-            score += 30.0
-            reasons.append(f"Aligned with {c.stream} stream")
-
-        # Interest matches (25 points max)
-        matched_interests = []
-        for word in interest_words:
-            if word in (c.title or "").lower() or word in (c.description or "").lower() or word in (c.category or "").lower():
-                matched_interests.append(word)
-        if matched_interests:
-            score += min(len(matched_interests) * 12, 25)
-            reasons.append(f"Matches your interests: {', '.join(matched_interests)}")
-        elif interest_words:
-            # Has interests but no match - slight penalty
-            score += 3.0
-
-        # Strength matches (20 points max)
-        matched_strengths = []
-        for word in strength_words:
-            if word in (c.title or "").lower() or word in (c.category or "").lower():
-                matched_strengths.append(word)
-        if matched_strengths:
-            score += min(len(matched_strengths) * 10, 20)
-            reasons.append(f"Leverages your strengths: {', '.join(matched_strengths)}")
-
-        # Demand level scoring (10 points)
-        if c.demand_level:
-            demand_lower = c.demand_level.lower()
-            if demand_lower == "high":
-                score += 10.0
-                if "High-growth" not in str(reasons):
-                    reasons.append("High-growth industry demand")
-            elif demand_lower == "medium":
-                score += 5.0
-
-        # Salary bonus (8 points)
-        if c.average_salary_entry and c.average_salary_entry > 600000:
-            score += 8.0
-            reasons.append("Lucrative entry-level compensation")
-
-        # Growth rate bonus (5 points)
-        if c.growth_rate and c.growth_rate > 15.0:
-            score += 5.0
-            if "Strong career growth" not in str(reasons):
-                reasons.append("Strong career growth potential")
-
-        if not reasons:
-            reasons.append("Good overall career fit")
-
-        matches.append({
-            "career": CareerResponse.model_validate(c),
-            "match_score": min(score, 100.0),
-            "match_reasons": reasons[:3],
-            "ai_predict_order": None,
-        })
-
-    matches.sort(key=lambda x: x["match_score"], reverse=True)
+    # No API key configured — return empty, never load DB
     return {
-        "matches": matches,
+        "matches": [],
         "ai_active": False,
-        "ai_model": None
+        "ai_model": None,
+        "ai_generated": False,
     }
 
 

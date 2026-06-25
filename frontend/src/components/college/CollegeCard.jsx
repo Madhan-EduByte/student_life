@@ -1,13 +1,19 @@
 import { motion } from 'framer-motion';
 import { HiLocationMarker, HiAcademicCap, HiStar, HiCurrencyRupee } from 'react-icons/hi';
 
-function CollegeCard({ college, matchScore, matchReasons, onClick, index = 0, aiPredictOrder }) {
+function CollegeCard({ college, matchScore, matchReasons, onClick, index = 0, aiPredictOrder, onViewDetails }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08 }}
-      onClick={() => onClick?.(college)}
+      onClick={() => {
+        if (onViewDetails) {
+          onViewDetails(college);
+        } else {
+          onClick?.(college);
+        }
+      }}
       className="glass-card-hover cursor-pointer p-6 group"
       id={`college-card-${college.id || index}`}
     >
@@ -148,7 +154,13 @@ function CollegeCard({ college, matchScore, matchReasons, onClick, index = 0, ai
         <span className="text-xs text-surface-500 capitalize">
           {college.type} institution
         </span>
-        <span className="text-xs text-primary-400 group-hover:text-primary-300 transition-colors">
+        <span 
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewDetails?.(college);
+          }}
+          className="text-xs text-primary-400 hover:text-primary-300 cursor-pointer transition-colors"
+        >
           View Details →
         </span>
       </div>

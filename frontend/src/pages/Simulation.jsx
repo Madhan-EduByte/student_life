@@ -8,6 +8,7 @@ import CareerProfileForm from '../components/common/CareerProfileForm';
 import CareerCard from '../components/career/CareerCard';
 import Input from '../components/common/Input';
 import useAuthStore from '../store/authStore';
+import { formatSalary } from '../utils/helpers';
 
 function Simulation() {
   const user = useAuthStore((state) => state.user);
@@ -34,6 +35,8 @@ function Simulation() {
   const [error, setError] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(!token);
   const [profileAnswered, setProfileAnswered] = useState(!!token);
+  const [selectedCareerMatch, setSelectedCareerMatch] = useState(null);
+  const [isCareerDetailsOpen, setIsCareerDetailsOpen] = useState(false);
   const [careerProfile, setCareerProfile] = useState({
     interests: [],
     strengths: [],
@@ -48,31 +51,67 @@ function Simulation() {
 
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
-  // Fetch matched careers from API
-  const fetchCareers = async () => {
+  // Fetch matched careers — always reads saved backend profile first for logged-in users
+  const fetchCareers = async (overrideProfile = null) => {
     try {
       setLoading(true);
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
-      // Build query string based on profile answers
+
+      // Step 1: For logged-in users, fetch the saved student profile from the backend
+      let profileData = null;
+      if (token) {
+        try {
+          const profRes = await fetch(`${baseUrl}/students/profile`, { headers });
+          if (profRes.ok) {
+            profileData = await profRes.json();
+          }
+        } catch (err) {
+          console.error('Failed to fetch student profile:', err);
+        }
+      }
+
+      // Step 2: Build query params — prefer backend profile, then modal answers
+      const interests =
+        overrideProfile?.interests?.join(',') ||
+        profileData?.interest_areas ||
+        (careerProfile.interests?.length ? careerProfile.interests.join(',') : '');
+      const strengths =
+        overrideProfile?.strengths?.join(',') ||
+        profileData?.strengths ||
+        (careerProfile.strengths?.length ? careerProfile.strengths.join(',') : '');
+      const stream =
+        overrideProfile?.industry_stream ||
+        profileData?.preferred_stream ||
+        careerProfile.industry_stream ||
+        '';
+
+      // Step 3: If no data at all, show profile modal instead of hitting the API
+      const hasData = interests || strengths || stream;
+      if (!hasData) {
+        setLoading(false);
+        setShowProfileModal(true);
+        return;
+      }
+
       const params = new URLSearchParams();
-      if (careerProfile.interests && careerProfile.interests.length > 0) {
-        params.append('interests', careerProfile.interests.join(','));
-      }
-      if (careerProfile.strengths && careerProfile.strengths.length > 0) {
-        params.append('strengths', careerProfile.strengths.join(','));
-      }
-      if (careerProfile.industry_stream) {
-        params.append('stream', careerProfile.industry_stream);
-      }
+      if (interests) params.append('interests', interests);
+      if (strengths) params.append('strengths', strengths);
+      if (stream) params.append('stream', stream);
 
       const response = await fetch(`${baseUrl}/careers/match?${params.toString()}`, { headers });
       if (response.ok) {
         const data = await response.json();
-        setMatches(data.matches || []);
-        setAiActive(data.ai_active || false);
-        setAiModel(data.ai_model || null);
-        setError(null);
+        // If backend says profile is needed (empty criteria guard hit), show modal
+        if (data.needs_profile) {
+          setShowProfileModal(true);
+          setMatches([]);
+          setError(null);
+        } else {
+          setMatches(data.matches || []);
+          setAiActive(data.ai_active || false);
+          setAiModel(data.ai_model || null);
+          setError(null);
+        }
       } else {
         setError('Failed to load careers from the server.');
       }
@@ -84,11 +123,13 @@ function Simulation() {
     }
   };
 
+
+  // Auto-fetch on mount for logged-in users; wait for modal answer/skip for guests
   useEffect(() => {
     if (profileAnswered) {
       fetchCareers();
     }
-  }, [profileAnswered, token]);
+  }, [token, profileAnswered]);
 
   // Reset page when sorting/filtering changes
   useEffect(() => {
@@ -134,6 +175,8 @@ function Simulation() {
     if (!validateProfile()) return;
     setProfileAnswered(true);
     setShowProfileModal(false);
+    // Trigger fetch with the just-saved profile data immediately
+    fetchCareers(careerProfile);
   };
 
   const handleSkipProfile = () => {
@@ -146,11 +189,30 @@ function Simulation() {
     setSelectedCareer(career);
     setIsSimulating(true);
     try {
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await fetch(`${baseUrl}/careers/simulate/${career.id}`, { headers });
+      const headers = token
+        ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+        : { 'Content-Type': 'application/json' };
+
+      let response;
+      // AI-generated careers have id: null — use the title-based simulate endpoint
+      if (!career.id) {
+        if (!token) {
+          setIsSimulating(false);
+          alert('Please log in to simulate a career.');
+          return;
+        }
+        // Find a matching DB career by title to get a real id, or fall back to POST with title
+        response = await fetch(`${baseUrl}/simulation/simulate`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ career_title: career.title, simulation_duration: '1_day' }),
+        });
+      } else {
+        response = await fetch(`${baseUrl}/simulation/simulate/${career.id}`, { headers });
+      }
+
       if (response.ok) {
         const data = await response.json();
-        
         // Simulate a slight delay for a dramatic "AI Generating" visual effect
         setTimeout(() => {
           setSimulation(data);
@@ -158,12 +220,12 @@ function Simulation() {
         }, 1500);
       } else {
         setIsSimulating(false);
-        alert("Simulation data is not available for this career yet.");
+        alert('Simulation data is not available for this career yet.');
       }
     } catch (err) {
       console.error('Error fetching simulation:', err);
       setIsSimulating(false);
-      alert("An error occurred while launching the simulation.");
+      alert('An error occurred while launching the simulation.');
     }
   };
 
@@ -363,16 +425,30 @@ function Simulation() {
                           matchScore={match.match_score}
                           aiPredictOrder={match.ai_predict_order}
                           onClick={handleSimulate}
+                          onViewDetails={() => {
+                            setSelectedCareerMatch(match);
+                            setIsCareerDetailsOpen(true);
+                          }}
                           index={i}
                         />
                       ))}
                     </div>
                   ) : (
-                    <div className="col-span-full text-center py-16">
-                      <p className="text-surface-500 text-lg">No careers match your criteria.</p>
-                      <p className="text-surface-600 text-sm mt-2">Try adjusting your stream filters or answers.</p>
+                    <div className="col-span-full text-center py-20">
+                      <div className="text-5xl mb-4">🎯</div>
+                      <p className="text-white text-xl font-display font-bold mb-2">Tell us about yourself</p>
+                      <p className="text-surface-400 text-sm mb-6 max-w-md mx-auto">
+                        We need your career interests and strengths to generate personalized AI recommendations.
+                      </p>
+                      <button
+                        onClick={() => setShowProfileModal(true)}
+                        className="px-6 py-3 rounded-xl bg-primary-600/20 border border-primary-500/30 text-primary-300 font-semibold text-sm hover:bg-primary-600/30 transition-all"
+                      >
+                        Fill Career Profile →
+                      </button>
                     </div>
                   )}
+
 
                   {/* Pagination Controls */}
                   {totalPages > 1 && (
@@ -624,6 +700,123 @@ function Simulation() {
             Get Started
           </Button>
         </div>
+      </Modal>
+
+      <Modal
+        isOpen={isCareerDetailsOpen}
+        onClose={() => {
+          setIsCareerDetailsOpen(false);
+          setSelectedCareerMatch(null);
+        }}
+        title="Career Fit Details"
+        size="lg"
+      >
+        {selectedCareerMatch && (
+          <div className="space-y-6 text-surface-300">
+            {/* Header */}
+            <div className="flex items-start gap-4 pb-6 border-b border-white/10">
+              <div className="w-16 h-16 rounded-2xl bg-accent-600/20 border border-accent-500/30 flex items-center justify-center text-3xl flex-shrink-0">
+                {selectedCareerMatch.career.icon || '💼'}
+              </div>
+              <div>
+                <h3 className="text-2xl font-display font-bold text-white mb-1">
+                  {selectedCareerMatch.career.title}
+                </h3>
+                <p className="text-surface-400 font-semibold">{selectedCareerMatch.career.category}</p>
+                <span className="mt-2 inline-block px-3 py-1 rounded-full text-xs font-bold bg-accent-500/20 text-accent-300 border border-accent-500/30">
+                  {selectedCareerMatch.career.demand_level || 'N/A'} Demand
+                </span>
+              </div>
+            </div>
+
+            {/* Score & Fit Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                <p className="text-xs text-surface-400 font-semibold mb-1 uppercase tracking-wider">AI Compatibility Match</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-extrabold text-accent-300 font-mono">
+                    {selectedCareerMatch.match_score?.toFixed(0)}%
+                  </span>
+                  <span className="text-xs text-surface-500">Perfect Fit Score</span>
+                </div>
+              </div>
+              <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                <p className="text-xs text-surface-400 font-semibold mb-2 uppercase tracking-wider">Predict Rank Order</p>
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                  AI Predict #{selectedCareerMatch.ai_predict_order || 'N/A'}
+                </span>
+              </div>
+            </div>
+
+            {/* Match Reasons */}
+            {selectedCareerMatch.match_reasons && selectedCareerMatch.match_reasons.length > 0 && (
+              <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                <h4 className="text-sm font-semibold text-white mb-2.5 flex items-center gap-1.5">
+                  ✨ Match Rationale
+                </h4>
+                <ul className="space-y-2">
+                  {selectedCareerMatch.match_reasons.map((reason, idx) => (
+                    <li key={idx} className="text-sm flex items-start gap-2.5">
+                      <span className="text-green-400 mt-0.5">✓</span>
+                      <span>{reason}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Detailed AI Explanation (5-10 lines) */}
+            <div className="bg-accent-950/10 border border-accent-500/20 p-5 rounded-xl">
+              <h4 className="text-sm font-semibold text-accent-300 mb-2.5 flex items-center gap-1.5">
+                📖 Career Path & Daily Role Overview
+              </h4>
+              <p className="text-sm text-surface-300 leading-relaxed font-sans whitespace-pre-line">
+                {selectedCareerMatch.career.description || "No detailed description was loaded. Please complete your profile parameters to retrieve AI-generated personalized details."}
+              </p>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-2">
+              {selectedCareerMatch.career.average_salary_entry && (
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <p className="text-[10px] text-surface-500 uppercase font-semibold">Entry Salary</p>
+                  <p className="text-base font-bold text-white mt-0.5">{formatSalary(selectedCareerMatch.career.average_salary_entry)}</p>
+                </div>
+              )}
+              {selectedCareerMatch.career.growth_rate && (
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <p className="text-[10px] text-surface-500 uppercase font-semibold">Growth Rate</p>
+                  <p className="text-base font-bold text-white mt-0.5">{selectedCareerMatch.career.growth_rate}% / yr</p>
+                </div>
+              )}
+              {selectedCareerMatch.career.work_environment && (
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <p className="text-[10px] text-surface-500 uppercase font-semibold">Work Environment</p>
+                  <p className="text-base font-bold text-white capitalize mt-0.5">{selectedCareerMatch.career.work_environment}</p>
+                </div>
+              )}
+              {selectedCareerMatch.career.stream && (
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <p className="text-[10px] text-surface-500 uppercase font-semibold">Academic Stream</p>
+                  <p className="text-base font-bold text-white capitalize mt-0.5">{selectedCareerMatch.career.stream}</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Simulation CTA */}
+            <div className="pt-2 flex justify-end">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setIsCareerDetailsOpen(false);
+                  handleSimulate(selectedCareerMatch.career);
+                }}
+              >
+                Launch AI Simulation Simulator →
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
