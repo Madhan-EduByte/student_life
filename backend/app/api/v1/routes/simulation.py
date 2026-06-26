@@ -22,17 +22,31 @@ async def simulate_career(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Start an AI career simulation."""
-    career = db.query(Career).filter(Career.id == data.career_id).first()
-    if not career:
+    """Start an AI career simulation.
+    
+    Accepts either:
+    - career_id: look up the career title from the DB (DB-sourced careers)
+    - career_title: use the title directly (AI-generated careers with no DB row)
+    """
+    if data.career_id is not None:
+        # DB-sourced career
+        career = db.query(Career).filter(Career.id == data.career_id).first()
+        if not career:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Career not found",
+            )
+        title = career.title
+    elif data.career_title:
+        # AI-generated career — simulate by title directly
+        title = data.career_title
+    else:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Career not found",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provide either career_id or career_title.",
         )
 
-    result = await ai_service.simulate_career(
-        career.title, data.simulation_duration
-    )
+    result = await ai_service.simulate_career(title, data.simulation_duration)
     return CareerSimulationResponse(**result)
 
 

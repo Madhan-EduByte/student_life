@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { HiSearch, HiFilter, HiAcademicCap, HiSortAscending, HiChevronLeft, HiChevronRight, HiChevronDoubleLeft, HiChevronDoubleRight, HiSparkles } from 'react-icons/hi';
 import CollegeCard from '../components/college/CollegeCard';
 import Input from '../components/common/Input';
+import Modal from '../components/common/Modal';
 import collegeService from '../services/collegeService';
 import useAuthStore from '../store/authStore';
 
@@ -25,6 +26,8 @@ function CollegeMatch() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [selectedCollegeMatch, setSelectedCollegeMatch] = useState(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const token = useAuthStore((state) => state.accessToken || state.access_token);
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -281,6 +284,10 @@ function CollegeMatch() {
                     matchReasons={match.match_reasons}
                     aiPredictOrder={match.ai_predict_order}
                     index={i}
+                    onViewDetails={() => {
+                      setSelectedCollegeMatch(match);
+                      setIsDetailsOpen(true);
+                    }}
                   />
                 ))}
               </div>
@@ -403,6 +410,124 @@ function CollegeMatch() {
           </div>
         )}
       </div>
+
+      <Modal
+        isOpen={isDetailsOpen}
+        onClose={() => {
+          setIsDetailsOpen(false);
+          setSelectedCollegeMatch(null);
+        }}
+        title="College Matching Details"
+        size="lg"
+      >
+        {selectedCollegeMatch && (
+          <div className="space-y-6 text-surface-300">
+            {/* Header / Basic Info */}
+            <div className="flex items-start gap-4 pb-6 border-b border-white/10">
+              <div className="w-16 h-16 rounded-2xl bg-primary-600/20 border border-primary-500/30 flex items-center justify-center text-3xl font-display font-bold text-primary-300 flex-shrink-0">
+                {selectedCollegeMatch.college.name?.[0] || 'C'}
+              </div>
+              <div>
+                <h3 className="text-2xl font-display font-bold text-white mb-1">
+                  {selectedCollegeMatch.college.name}
+                </h3>
+                <p className="text-surface-400 font-semibold">{selectedCollegeMatch.college.university}</p>
+                <p className="text-sm text-surface-500 mt-1 flex items-center gap-1">
+                  📍 {selectedCollegeMatch.college.city}, {selectedCollegeMatch.college.state}
+                </p>
+              </div>
+            </div>
+
+            {/* Score & Fit Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                <p className="text-xs text-surface-400 font-semibold mb-1 uppercase tracking-wider">AI Compatibility Match</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-extrabold text-primary-300 font-mono">
+                    {selectedCollegeMatch.match_score?.toFixed(0)}%
+                  </span>
+                  <span className="text-xs text-surface-500">Perfect Fit Score</span>
+                </div>
+              </div>
+              <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                <p className="text-xs text-surface-400 font-semibold mb-2 uppercase tracking-wider">Predict Rank Order</p>
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                  AI Predict #{selectedCollegeMatch.ai_predict_order || 'N/A'}
+                </span>
+              </div>
+            </div>
+
+            {/* Match Reasons */}
+            {selectedCollegeMatch.match_reasons && selectedCollegeMatch.match_reasons.length > 0 && (
+              <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                <h4 className="text-sm font-semibold text-white mb-2.5 flex items-center gap-1.5">
+                  ✨ Match Rationale
+                </h4>
+                <ul className="space-y-2">
+                  {selectedCollegeMatch.match_reasons.map((reason, idx) => (
+                    <li key={idx} className="text-sm flex items-start gap-2.5">
+                      <span className="text-green-400 mt-0.5">✓</span>
+                      <span>{reason}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Detailed AI Explanation (5-10 lines) */}
+            <div className="bg-primary-950/10 border border-primary-500/20 p-5 rounded-xl">
+              <h4 className="text-sm font-semibold text-primary-300 mb-2.5 flex items-center gap-1.5">
+                📖 College Overview & Insights
+              </h4>
+              <p className="text-sm text-surface-300 leading-relaxed font-sans whitespace-pre-line">
+                {selectedCollegeMatch.college.description || "No detailed explanation was loaded. Please complete your profile parameters to retrieve AI-generated personalized details."}
+              </p>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-2">
+              {selectedCollegeMatch.college.nirf_rank && (
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <p className="text-[10px] text-surface-500 uppercase font-semibold">NIRF Rank</p>
+                  <p className="text-base font-bold text-white mt-0.5">#{selectedCollegeMatch.college.nirf_rank}</p>
+                </div>
+              )}
+              {selectedCollegeMatch.college.placement_rate && (
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <p className="text-[10px] text-surface-500 uppercase font-semibold">Placement Rate</p>
+                  <p className="text-base font-bold text-white mt-0.5">{selectedCollegeMatch.college.placement_rate}%</p>
+                </div>
+              )}
+              {selectedCollegeMatch.college.average_package && (
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <p className="text-[10px] text-surface-500 uppercase font-semibold">Avg Salary Package</p>
+                  <p className="text-base font-bold text-white mt-0.5">₹{selectedCollegeMatch.college.average_package} LPA</p>
+                </div>
+              )}
+              {selectedCollegeMatch.college.accreditation && (
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <p className="text-[10px] text-surface-500 uppercase font-semibold">Accreditation</p>
+                  <p className="text-base font-bold text-white mt-0.5">{selectedCollegeMatch.college.accreditation}</p>
+                </div>
+              )}
+              {selectedCollegeMatch.college.type && (
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <p className="text-[10px] text-surface-500 uppercase font-semibold">College Type</p>
+                  <p className="text-base font-bold text-white capitalize mt-0.5">{selectedCollegeMatch.college.type}</p>
+                </div>
+              )}
+              {(selectedCollegeMatch.college.fee_range_min || selectedCollegeMatch.college.fee_range_max) && (
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5 col-span-2 md:col-span-1">
+                  <p className="text-[10px] text-surface-500 uppercase font-semibold">Annual Fees</p>
+                  <p className="text-xs font-bold text-white mt-0.5">
+                    ₹{selectedCollegeMatch.college.fee_range_min?.toLocaleString()} - ₹{selectedCollegeMatch.college.fee_range_max?.toLocaleString()}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

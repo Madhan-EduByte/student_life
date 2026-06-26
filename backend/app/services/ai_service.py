@@ -888,7 +888,143 @@ Respond ONLY with valid JSON."""
         scored_careers.sort(key=lambda x: x["match_score"], reverse=True)
         return scored_careers
 
+    # ── AI-Generation Methods (fully AI-invented, no DB rows) ────────────────
+
+    def _build_college_generation_prompt(self, criteria: Dict[str, Any]) -> str:
+        """Build a prompt that asks the AI to invent and return college recommendations."""
+        return f"""You are DestinAI, an expert AI education counselor for Indian students. A student has submitted their profile and is asking for college recommendations.
+
+## Student Profile:
+- Preferred Stream: {criteria.get('preferred_stream') or 'Not specified'}
+- Location Preference: {criteria.get('location') or 'Any India'}
+- Budget Range: {criteria.get('budget_range') or 'Any'}
+- Interests / Career Goals: {criteria.get('interests') or 'Not specified'}
+
+## Your Task:
+Generate exactly 10 personalized college recommendations based ONLY on the student's profile above. Use your knowledge of real Indian colleges and universities. Do NOT rely on any preset list — think from the student's profile outward.
+
+For each college, provide:
+- A real or plausible Indian college name
+- City and state
+- Stream(s) it offers (science/commerce/arts/vocational)
+- Approximate annual fee range (min and max in INR)
+- NIRF rank (if applicable, else null)
+- Placement rate percentage (0-100)
+- Average package in LPA
+- College type (government/private/deemed)
+- Accreditation grade (A++/A+/A/B++/B+/B/C or null)
+- A match_score (0-100) reflecting how well it fits this student
+- 2-3 specific, personalised match_reasons (max 15 words each)
+- A detailed description/profile (about 5-10 sentences detailing the campus environment, student life, notable infrastructure, unique programs, and why it is a great choice for this student)
+
+Sort the list by match_score descending.
+
+Respond ONLY with a valid JSON array. No markdown, no extra text:
+[
+  {{
+    "name": "College Name",
+    "university": "Affiliated University or Autonomous",
+    "city": "City",
+    "state": "State",
+    "type": "government|private|deemed",
+    "stream": ["science", "commerce"],
+    "fee_range_min": 50000,
+    "fee_range_max": 200000,
+    "nirf_rank": 45,
+    "placement_rate": 88.5,
+    "average_package": 7.2,
+    "accreditation": "A+",
+    "match_score": 92,
+    "match_reasons": ["Top-ranked science college within your budget", "Excellent placement record in your field"],
+    "description": "This is a detailed 5 to 10 lines profile of the college. It describes the campus vibe, the high-tech laboratories, state of the art classrooms, extensive sports facilities, active student clubs, and the overall learning environment that matches the student's interests and career aspirations perfectly."
+  }}
+]"""
+
+    def _build_career_generation_prompt(self, criteria: Dict[str, Any]) -> str:
+        """Build a prompt that asks the AI to invent and return career recommendations."""
+        return f"""You are DestinAI, an expert AI career counselor. A student has submitted their profile and is asking for career recommendations.
+
+## Student Profile:
+- Interests: {criteria.get('interests') or 'Not specified'}
+- Strengths: {criteria.get('strengths') or 'Not specified'}
+- Preferred Stream: {criteria.get('preferred_stream') or 'Not specified'}
+
+## Your Task:
+Generate exactly 10 personalised career recommendations based ONLY on the student's profile above. Think from their interests and strengths outward — don't just list generic careers. Consider the Indian job market.
+
+For each career, provide:
+- Career title (specific and real)
+- Stream (science/commerce/arts/vocational)
+- Category (e.g. Technology, Healthcare, Finance, Design, Law, etc.)
+- Demand level (high/medium/low)
+- Average entry-level annual salary in INR
+- Career growth rate percentage per year
+- A match_score (0-100) reflecting fit with this student's profile
+- 2-3 specific, personalised match_reasons (max 15 words each)
+- A detailed description/overview (about 5-10 sentences explaining what the career is, the day-to-day responsibilities, key technical/soft skills needed, career progression stages, and why it matches the student's specific profile)
+
+Sort by match_score descending.
+
+Respond ONLY with a valid JSON array. No markdown, no extra text:
+[
+  {{
+    "title": "Career Title",
+    "stream": "science",
+    "category": "Technology",
+    "description": "This is a detailed 5 to 10 lines explanation of the career. It covers daily responsibilities such as software development, system design, and collaboration with cross-functional teams. It details essential skills like programming, algorithms, and problem-solving, along with the career growth path from junior developer to architect, showing why it is a highly suitable career option.",
+    "demand_level": "high",
+    "average_salary_entry": 800000,
+    "growth_rate": 22.5,
+    "match_score": 94,
+    "match_reasons": ["Directly aligns with your interest in technology", "Leverages your analytical strengths"]
+  }}
+]"""
+
+    async def generate_college_recommendations(self, criteria: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
+        """Ask the AI to generate college recommendations from scratch (no DB rows).
+        
+        Returns a list of AI-invented college dicts with match scores and reasons.
+        Returns None if AI is not available (caller should fall back to existing DB logic).
+        """
+        prompt = self._build_college_generation_prompt(criteria)
+        result = await self.generate_with_selected_provider(prompt)
+
+        if isinstance(result, list) and len(result) > 0 and "name" in result[0]:
+            logger.info(f"AI generated {len(result)} college recommendations via {self.last_used_model}")
+            return result
+        elif isinstance(result, dict):
+            # LLM sometimes wraps the array in a dict key
+            for key in ("colleges", "recommendations", "results", "data"):
+                if key in result and isinstance(result[key], list):
+                    return result[key]
+
+        logger.warning(f"generate_college_recommendations: unexpected result shape or AI unavailable. last_used_model={self.last_used_model}")
+        return None
+
+    async def generate_career_recommendations(self, criteria: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
+        """Ask the AI to generate career recommendations from scratch (no DB rows).
+        
+        Returns a list of AI-invented career dicts with match scores and reasons.
+        Returns None if AI is not available (caller should fall back to existing DB logic).
+        """
+        prompt = self._build_career_generation_prompt(criteria)
+        result = await self.generate_with_selected_provider(prompt)
+
+        if isinstance(result, list) and len(result) > 0 and "title" in result[0]:
+            logger.info(f"AI generated {len(result)} career recommendations via {self.last_used_model}")
+            return result
+        elif isinstance(result, dict):
+            for key in ("careers", "recommendations", "results", "data"):
+                if key in result and isinstance(result[key], list):
+                    return result[key]
+
+        logger.warning(f"generate_career_recommendations: unexpected result shape or AI unavailable. last_used_model={self.last_used_model}")
+        return None
+
+    # ── Existing Scoring / Prediction Methods (DB-based) ────────────────────
+
     async def predict_college_matches(self, colleges: List[Dict[str, Any]], criteria: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
+
         """Use the selected LLM to rank and score colleges based on criteria."""
         college_list_str = "\n".join([
             f"- ID: {c['id']}, Name: {c['name']}, NIRF Rank: {c.get('nirf_rank') or 'N/A'}, "
@@ -1003,6 +1139,88 @@ Respond ONLY with valid JSON array (no markdown, no extra text):
         # Fallback to high-quality rule-based predictions
         logger.warning(f"predict_career_matches LLM call failed (model: {self.last_used_model}). Using rule-based fallback.")
         return self.generate_mock_career_predictions(careers, criteria)
+
+    async def ask_advisor(self, query: str) -> str:
+        """Ask DestinAI (AI search advisor) about colleges, careers, or education."""
+        prompt = f"""You are DestinAI, the premier AI Career and College Search Assistant for the student life platform.
+Your task is to answer the student's question which must be strictly related to:
+1. Careers and job market (booming fields, growth, salaries, types of jobs, skills needed, future prospects).
+2. Colleges and Universities (courses, eligibility, infrastructure, placements, average packages, fees, locations, NIRF rank).
+3. Educational guidance, student life, companies to target, or academic planning.
+
+CRITICAL RULE:
+If the user's query is NOT about education, colleges, careers, admissions, or professional growth (e.g. asking about sports match results, movie recommendations, cooking recipes, general jokes, general coding questions, or unrelated topics), you MUST refuse to answer politely. Your refusal response MUST start with: "I'm sorry, but I can only answer questions related to careers, colleges, and education." and explain that you are specialized in this domain.
+
+Otherwise, provide a detailed, insightful, and helpful response (around 3-7 sentences or a clean bulleted list) based on your knowledge of real Indian colleges, universities, and the career market.
+
+Student's Question:
+{query}
+
+Your Response (as DestinAI):"""
+
+        if self.is_api_configured():
+            provider = await self.get_active_validated_provider()
+            if provider == "gemini":
+                from google import genai as _genai
+                try:
+                    client = _genai.Client(api_key=settings.GEMINI_API_KEY)
+                    resp = await client.aio.models.generate_content(
+                        model=self._gemini_working_model or "gemini-2.5-flash",
+                        contents=prompt
+                    )
+                    if resp and resp.text:
+                        return resp.text.strip()
+                except Exception as e:
+                    logger.error(f"ask_advisor Gemini generation failed: {e}")
+            elif provider:
+                try:
+                    from openai import OpenAI
+                    api_key = self._get_provider_key_from_settings(provider)
+                    base_url = ""
+                    default_model = "gpt-4o"
+                    if provider == "meta":
+                        base_url = "https://api.together.xyz/v1"
+                        default_model = "meta-llama/Llama-3-8b-chat-hf"
+                    elif provider == "perplexity":
+                        base_url = "https://api.perplexity.ai"
+                        default_model = "sonar-reasoning"
+                    elif provider == "grok":
+                        base_url = "https://api.x.ai/v1"
+                        default_model = "grok-beta"
+                    elif provider == "deepseek":
+                        base_url = "https://api.deepseek.com/v1"
+                        default_model = "deepseek-chat"
+
+                    client_args = {"api_key": api_key}
+                    if base_url:
+                        client_args["base_url"] = base_url
+
+                    client = OpenAI(**client_args)
+                    model_name = settings.AI_MODEL_NAME if settings.AI_MODEL_NAME else default_model
+                    response = client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {"role": "system", "content": "You are DestinAI, the premier AI Career and College Search Assistant."},
+                            {"role": "user", "content": prompt},
+                        ],
+                        temperature=0.7,
+                        max_tokens=1000,
+                    )
+                    text = response.choices[0].message.content.strip()
+                    if text:
+                        return text
+                except Exception as e:
+                    logger.error(f"ask_advisor OpenAI-compatible generation failed for provider '{provider}': {e}")
+
+        # Fallback response (mock/offline) if AI not configured or fails
+        query_lower = query.lower()
+        edu_keywords = ["college", "career", "study", "engineering", "medical", "science", "commerce", "arts", "jobs", "salary", "booming", "future", "placement", "university", "admission", "course", "degree", "stream", "work", "profession", "business"]
+        is_educational = any(k in query_lower for k in edu_keywords)
+        
+        if not is_educational:
+            return "I'm sorry, but I can only answer questions related to careers, colleges, and education. Please ask something about admission criteria, booming career sectors, engineering branches, commerce scope, or placements."
+
+        return f"DestinAI Advisor (Offline Mode):\nHere is some guidance on '{query}': In India, choosing between premier institutions depends heavily on placement ratios and infrastructure. For instance, top-tier engineering branches (like CSE and AI) are booming with an average package of 10-15 LPA. Top commerce schools offer excellent finance placements, while arts streams lead to fields like design, civil services, and law. Please configure a valid Gemini API key in your .env file to unlock real-time, highly detailed AI-powered counseling responses!"
 
 
 # Singleton instance

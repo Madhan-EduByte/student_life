@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { HiTrendingUp, HiBriefcase, HiCurrencyRupee } from 'react-icons/hi';
 import { formatSalary } from '../../utils/helpers';
 
-function CareerCard({ career, onClick, index = 0, matchScore, aiPredictOrder }) {
+function CareerCard({ career, onClick, index = 0, matchScore, aiPredictOrder, onViewDetails }) {
   const demandColors = {
     high: 'badge-success',
     medium: 'badge-warning',
@@ -14,7 +14,13 @@ function CareerCard({ career, onClick, index = 0, matchScore, aiPredictOrder }) 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      onClick={() => onClick?.(career)}
+      onClick={() => {
+        if (onViewDetails) {
+          onViewDetails(career);
+        } else {
+          onClick?.(career);
+        }
+      }}
       className="glass-card-hover cursor-pointer p-6 group"
       id={`career-card-${career.id || index}`}
     >
@@ -87,7 +93,13 @@ function CareerCard({ career, onClick, index = 0, matchScore, aiPredictOrder }) 
         <span className="text-xs text-surface-500 capitalize">
           {career.stream} stream
         </span>
-        <span className="text-xs text-primary-400 group-hover:text-primary-300 transition-colors">
+        <span 
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewDetails?.(career);
+          }}
+          className="text-xs text-primary-400 hover:text-primary-300 cursor-pointer transition-colors"
+        >
           View Details →
         </span>
       </div>

@@ -68,8 +68,9 @@ class CareerListResponse(BaseModel):
 class CareerSimulationRequest(BaseModel):
     """Request for career simulation."""
 
-    career_id: int
-    simulation_duration: str = "1_day"  # 1_day, 1_week, 1_month
+    career_id: Optional[int] = None        # DB career id (for DB-sourced careers)
+    career_title: Optional[str] = None     # Direct title (for AI-generated careers with no DB id)
+    simulation_duration: str = "1_day"     # 1_day, 1_week, 1_month
 
 
 class CareerSimulationResponse(BaseModel):

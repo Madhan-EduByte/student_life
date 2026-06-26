@@ -132,4 +132,5 @@ export const NAV_LINKS = [
   { path: '/careerGuide', label: 'Career Guide' },
   { path: '/collegesSimulate', label: 'Colleges Simulate' },
   { path: '/careerSimulate', label: 'Career Simulate' },
+  { path: '/smartSearch', label: 'AI Search' },
 ];
